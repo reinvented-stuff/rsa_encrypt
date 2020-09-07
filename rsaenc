@@ -105,7 +105,6 @@ export_pubkey() {
 
 	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && return 2
 
-	local pubkey_filename
 	local tmp_pubkey_filename
 	local pem_pubkey_filename
 
@@ -157,7 +156,6 @@ decrypt_content() {
 	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && return 2
 
 	local content
-	local recipient_pubkey
 	local input_source
 	local input_source_type
 
@@ -241,13 +239,14 @@ import_private_key() {
 	local private_key_filename
 	local private_key_alias
 	local private_key_basename
+	local pem_privatekey_filename
 	
 	[[ ! -z "${1}" ]] && private_key_filename="${1}" || error "Please, set the input source with a public key"
 	[[ ! -z "${2}" ]] && private_key_alias="${2}"
 
 
-	if [[ ! -z "${pubkey_alias}" ]]; then
-		private_key_basename="${pubkey_alias}.pem"
+	if [[ ! -z "${private_key_alias}" ]]; then
+		private_key_basename="${private_key_alias}.pem"
 	else
 		private_key_basename="${private_key_filename##*/}.pem"
 	fi

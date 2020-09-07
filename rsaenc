@@ -115,8 +115,7 @@ init_private_key() {
 
 export_pubkey() {
 
-	[[ -z "${LOCAL_PUBKEY_FILENAME}" ]] && return 2
-	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && return 2
 
 	local pubkey_filename
 	local tmp_pubkey_filename
@@ -125,11 +124,11 @@ export_pubkey() {
 	tmp_pubkey_filename="$(mktemp)"
 	pem_pubkey_filename="${LOCAL_PUBKEY_STORAGE}/${LOCAL_PUBKEY_FILENAME##*/}.pem"
 
-	ssh-keygen -f "${LOCAL_PUBKEY_FILENAME}" -e -m pem > "${tmp_pubkey_filename}"
-	openssl rsa -in "${tmp_pubkey_filename}" -RSAPublicKey_in -pubout > "${pem_pubkey_filename}" 2>/dev/null
-	rm "${tmp_pubkey_filename}"
+	echo "ssh-rsa:"
+	ssh-keygen -f "${LOCAL_PRIVATEKEY_FILENAME}" -y
 
-	cat "${pem_pubkey_filename}"
+	echo "rsa:"
+	openssl rsa -RSAPublicKey_in -pubout -in <(ssh-keygen -f "${LOCAL_PRIVATEKEY_FILENAME}" -e -m pem) 2>/dev/null
 
 }
 
@@ -190,8 +189,7 @@ decrypt_content() {
 		error "Unsupported input source type: '${input_source_type}'"
 	fi
 
-	echo "openssl rsautl -decrypt -oaep -inkey $(init_private_key)"
-	echo "${content}" | base64 --decode | openssl rsautl -decrypt -oaep -inkey "$(init_private_key)"
+	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "$(init_private_key)"
 
 }
 
@@ -239,7 +237,7 @@ import_pubkey() {
 		error "Public key already exists: ${pem_pubkey_basename}"
 	fi
 
-	ssh-keygen -f "${LOCAL_PUBKEY_FILENAME}" -e -m pem > "${tmp_pubkey_filename}"
+	ssh-keygen -f "${pubkey_filename}" -e -m pem > "${tmp_pubkey_filename}"
 	openssl rsa -in "${tmp_pubkey_filename}" -RSAPublicKey_in -pubout > "${pem_pubkey_filename}" 2>/dev/null
 	rm "${tmp_pubkey_filename}"
 

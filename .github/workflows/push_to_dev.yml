@@ -1,0 +1,121 @@
+name: Bash
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+
+  build:
+    name: Build dev branch
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Check if .version file exists
+      run: if [[ -f .version ]]; then exit 0; else exit 2; fi
+
+    - name: Read out .version file
+      id: readversionfile
+      run: echo "::set-output name=desiredversion::$(cat .version)"
+
+    - name: Verify version
+      run: echo "${{steps.readversionfile.outputs.desiredversion}}"
+
+    - name: Lookup planned tag
+      id: tagexists
+      run: |
+        echo "::set-output name=tagexists::$(curl -s -X GET -H 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' --url https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{steps.readversionfile.outputs.desiredversion}} | jq .object.sha)"
+    
+    - name: Check if planned tag doesn't exist yet
+      run: if [[ "${{ steps.tagexists.outputs.tagexists }}" == "null" ]]; then exit 0; else exit 2; fi
+
+    - name: Build
+      run: make build
+
+    - name: Generate changelog
+      id: generate_changelog
+      shell: bash
+      run: |
+        described=$(git describe --tags)
+        described_parts=( ${described//-/ } )
+        current_tag=${described_parts[0]}
+        
+        changelog_filename=".changelog"
+        release_changelog_filename=".release_changelog"
+        echo "current_tag=${current_tag}"
+
+        echo "Listing current changes..."
+        git log --pretty=oneline --format='%w(1000)* %cd %an <%ae>%n%w(60,0,2)- %s%n' --date="format:%a %b %d %Y" "$current_tag"..HEAD | tee "${changelog_filename}"
+        git log --pretty=oneline --format='%w(1000)**%cd %an <%ae>**%n%w(60,0,2)- %s%n' --date="format:%a %b %d %Y" "$current_tag"..HEAD | tee "${release_changelog_filename}"
+        
+        echo "Changelog file..."
+        cat .changelog
+
+        echo "Preparing a GitHub Release Changelog"
+        cat << EOF > "${release_changelog_filename}"
+        Automatically generated release with assets.
+
+        Changelog:
+        $(cat "${release_changelog_filename}")
+        EOF
+
+        echo "::set-output name=changelog_filename::${changelog_filename}"
+        echo "::set-output name=release_changelog_filename::${release_changelog_filename}"
+
+    - name: Display changelog
+      run: echo "${{ steps.generate_changelog.outputs.changelog }}"
+
+    - name: Setup RPM Build environment
+      id: setup_rpmbuild_env
+      shell: bash
+      run: |
+
+        version="$(cat .version)"
+        sudo apt-get update
+        sudo apt-get install rpm
+
+        make build
+        make compress
+
+        # rpmdev-setuptree
+        mkdir /home/runner/rpmbuild
+        mkdir -pv /home/runner/rpmbuild/BUILD
+        mkdir -pv /home/runner/rpmbuild/BUILDROOT
+        mkdir -pv /home/runner/rpmbuild/RPMS
+        mkdir -pv /home/runner/rpmbuild/SOURCES
+        mkdir -pv /home/runner/rpmbuild/SPECS
+        mkdir -pv /home/runner/rpmbuild/SRPMS
+        
+        cp -v ".rpm/rsaenc.spec.tpl" /home/runner/rpmbuild/SPECS
+        mv -v /home/runner/rpmbuild/SPECS/rsaenc.spec.tpl /home/runner/rpmbuild/SPECS/rsaenc.spec
+        
+        sed -i"" \
+          -e "s/__VERSION__/${version}/" \
+          -e "s/__SOURCE_TARGZ_FILENAME__/rsaenc-${version}.tar.gz/" \
+          /home/runner/rpmbuild/SPECS/rsaenc.spec
+        
+        cat "${{steps.generate_changelog.outputs.changelog_filename}}" >> /home/runner/rpmbuild/SPECS/rsaenc.spec
+        cat -n /home/runner/rpmbuild/SPECS/rsaenc.spec
+
+        cp -v "rsaenc-${version}.tar.gz" /home/runner/rpmbuild/SOURCES
+
+    - name: Build RPM package
+      id: build_rpm_package
+      shell: bash
+      run: |
+        cd /home/runner
+        rpmbuild -v -ba "rpmbuild/SPECS/rsaenc.spec"
+
+    - name: Verify RPM package
+      id: verify_rpm_package
+      run: |
+        version="$(cat .version)"
+        ls -la /home/runner/rpmbuild/RPMS/x86_64/rsaenc-${version}-1.x86_64.rpm
+        echo "::set-output name=path_to_rpm_file::/home/runner/rpmbuild/RPMS/x86_64/rsaenc-${version}-1.x86_64.rpm"
+        echo "::set-output name=rpm_filename::rsaenc-${version}-1.x86_64.rpm"
+

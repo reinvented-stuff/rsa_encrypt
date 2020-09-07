@@ -16,7 +16,7 @@ build:
 	mkdir -vp "$(PROGNAME_VERSION)"
 	cp -v $(TARGZ_CONTENTS) "$(PROGNAME_VERSION)/"
 	sed -i"" -e "s/VERSION=.*/VERSION='$(VERSION)'/" "$(PROGNAME_VERSION)/rsaenc"
-	[ -f "$(PROGNAME_VERSION)/rsaenc-e" ] && rm "$(PROGNAME_VERSION)/rsaenc-e"
+	[ -f "$(PROGNAME_VERSION)/rsaenc-e" ] && rm "$(PROGNAME_VERSION)/rsaenc-e" || :
 
 compress: $(TARGZ_FILENAME)
 

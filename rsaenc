@@ -15,7 +15,7 @@ usage() {
 	cat << EOF
 RSA encryption/decryption tool
 Version: ${VERSION}
-Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P] [-i filename] [-s payload] [-a alias]
+Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L] [-r keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt	         Encrypt payload
@@ -23,11 +23,14 @@ Actions:
     -E|--export-pubkey	     Export your public key in a PEM format
     -I|--import-pubkey	     Import public key of a recipient
     -P|--import-privkey	     Import private key for decryption
+    -L|--list-keystorage	 List imported keys
 
 Options:
     -i|--input-filename	     Input file for a selected action
     -s|--input-string	     Input payload as a string
     -a|--import-alias	     Alias for imported payload
+    -k|--private-key	     Private key file to use
+    -r|--recipient	         Recipient's public key name
 
 Auxiliary:
     -f|--force          	 Force selected action
@@ -175,7 +178,7 @@ decrypt_content() {
 		error "Unsupported input source type: '${input_source_type}'"
 	fi
 
-	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "${LOCAL_PRIVATEKEY_FILENAME}"
+	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "${PRIVATE_KEY:-LOCAL_PRIVATEKEY_FILENAME}"
 
 }
 
@@ -194,17 +197,19 @@ import_pubkey() {
 
 	[[ ! -z "${1}" ]] && input_source="${1}" || error "Please, set the input source with a public key"
 	[[ ! -z "${2}" ]] && input_source_type="${2}" || input_source_type="file"
-	[[ ! -z "${3}" ]] && pubkey_alias="${3}" || pubkey_alias="id_rsa_$(date +%s)"
+	[[ ! -z "${3}" ]] && pubkey_alias="${3}"
 
 	if [[ "${input_source_type}" == "string" ]]; then
 		debug "Importing public key from a sting"
 		debug "Preparing a tempfile"
 		pubkey_filename=$(mktemp)
 		echo "${input_source}" > "${pubkey_filename}"
+		[[ -z "${pubkey_alias}" ]] && pubkey_alias="id_rsa_$(date +%s)"
 	
 	elif [[ "${input_source_type}" == "file" ]]; then
 		[[ ! -f "${input_source}" ]] && error "Can't open public key file: '${input_source}'"
 		pubkey_filename="${input_source}"
+		[[ -z "${pubkey_alias}" ]] && pubkey_alias="${pubkey_filename##*/}"
 	
 	else
 		error "Unsupported input source type: '${input_source_type}'"
@@ -267,10 +272,19 @@ import_private_key() {
 list_keystorage() {
 
 	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
-	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
+
 	[[ ! -d "${LOCAL_PUBKEY_STORAGE}" ]] && error "Please, make sure your key storage is initialised: ${LOCAL_PUBKEY_STORAGE}"
+	[[ ! -d "${LOCAL_PRIVATEKEY_STORAGE}" ]] && error "Please, make sure your key storage is initialised: ${LOCAL_PRIVATEKEY_STORAGE}"
 	
-	ls "${LOCAL_PUBKEY_STORAGE}" | while read line; do
+	echo "PUBLIC KEYS:"
+	ls "${LOCAL_PUBKEY_STORAGE}" | nl | while read line; do
+		echo "${line}"
+	done
+	
+	echo ""	
+	echo "PRIVATE KEYS:"
+	ls "${LOCAL_PRIVATEKEY_STORAGE}" | nl | while read line; do
 		echo "${line}"
 	done
 }
@@ -280,7 +294,7 @@ main() {
 	local CLI_RECIPIENT_PUBKEY
 	local CLI_INPUT_FILENAME
 	local CLI_INPUT_STRING
-	local CLI_INPUT_FORMAT
+	local CLI_PRIVATE_KEY
 	local CLI_ENCRYPT
 	local CLI_DECRYPT
 	local CLI_EXPORT_PUBKEY
@@ -304,8 +318,8 @@ main() {
 			-s|--input-string)
 				[[ -z "${CLI_INPUT_STRING}" ]] && CLI_INPUT_STRING="${2}" || error "Argument already set: -s"; shift; shift;;
 
-			-F|--input-format)
-				[[ -z "${CLI_INPUT_FORMAT}" ]] && CLI_INPUT_FORMAT="${2}" || error "Argument already set: -F"; shift; shift;;
+			-k|--private-key)
+				[[ -z "${CLI_PRIVATE_KEY}" ]] && CLI_PRIVATE_KEY="${2}" || error "Argument already set: -k"; shift; shift;;
 
 			-e|--encrypt)
 				[[ -z "${CLI_ENCRYPT}" ]] && CLI_ENCRYPT=1 || error "Parameter already set: -e"; shift;;
@@ -340,13 +354,17 @@ main() {
 		esac 
 	done
 
+	if [[ "${CLI_FORCE}" == "1" ]]; then
+		export FORCE_ACTOIN=1
+	fi
+
+	if [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
+		export PRIVATE_KEY="${CLI_PRIVATE_KEY}"
+	fi
+
 	if [[ "${CLI_LIST_KEYSTORAGE}" == "1" ]]; then
 		debug "Listing keystorage"
 		list_keystorage
-	fi
-
-	if [[ "${CLI_FORCE}" == "1" ]]; then
-		export FORCE_ACTOIN=1
 	fi
 
 	if [[ "${CLI_EXPORT_PUBKEY}" == "1" ]]; then

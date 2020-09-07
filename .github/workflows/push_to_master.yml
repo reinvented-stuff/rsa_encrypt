@@ -41,7 +41,7 @@ jobs:
       id: generate_changelog
       shell: bash
       run: |
-        described=$(git describe --tags)
+        described=$(git describe --tags || git rev-list --max-parents=0 HEAD)
         described_parts=( ${described//-/ } )
         current_tag=${described_parts[0]}
         

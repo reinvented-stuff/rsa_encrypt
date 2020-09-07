@@ -51,7 +51,7 @@ ssh root password: VHo&EdY%thjEGq6C
 # Usage
 
 ```
-Usage: $0 [-h] [-v] [-E|-I] [-i filename] [-s payload] [-a alias]
+Usage: rsaenc [-h] [-v] [-E|-I] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -E|--export-pubkey	     Export your public key in a PEM format

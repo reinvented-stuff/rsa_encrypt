@@ -114,11 +114,12 @@ export_pubkey() {
 	tmp_pubkey_filename="$(mktemp)"
 	pem_pubkey_filename="${LOCAL_PUBKEY_STORAGE}/${LOCAL_PUBKEY_FILENAME##*/}.pem"
 
+	echo "Exporting private key: ${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}"
 	echo "ssh-rsa:"
-	ssh-keygen -f "${LOCAL_PRIVATEKEY_FILENAME}" -y
+	ssh-keygen -f "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}" -y
 
 	echo "rsa:"
-	openssl rsa -RSAPublicKey_in -pubout -in <(ssh-keygen -f "${LOCAL_PRIVATEKEY_FILENAME}" -e -m pem) 2>/dev/null
+	openssl rsa -RSAPublicKey_in -pubout -in <(ssh-keygen -f "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}" -e -m pem) 2>/dev/null
 
 }
 
@@ -178,7 +179,7 @@ decrypt_content() {
 		error "Unsupported input source type: '${input_source_type}'"
 	fi
 
-	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "${PRIVATE_KEY:-LOCAL_PRIVATEKEY_FILENAME}"
+	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}"
 
 }
 
@@ -359,7 +360,7 @@ main() {
 	fi
 
 	if [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
-		export PRIVATE_KEY="${CLI_PRIVATE_KEY}"
+		export PRIVATE_KEY="${LOCAL_PRIVATEKEY_STORAGE}/${CLI_PRIVATE_KEY}"
 	fi
 
 	if [[ "${CLI_LIST_KEYSTORAGE}" == "1" ]]; then

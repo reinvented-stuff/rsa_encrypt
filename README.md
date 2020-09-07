@@ -51,11 +51,14 @@ ssh root password: VHo&EdY%thjEGq6C
 # Usage
 
 ```
-Usage: rsaenc [-h] [-v] [-E|-I] [-i filename] [-s payload] [-a alias]
+Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P] [-i filename] [-s payload] [-a alias]
 
 Actions:
+    -e|--encrypt	         Encrypt payload
+    -d|--decrypt	         Decrypt payload
     -E|--export-pubkey	     Export your public key in a PEM format
     -I|--import-pubkey	     Import public key of a recipient
+    -P|--import-privkey	     Import private key for decryption
 
 Options:
     -i|--input-filename	     Input file for a selected action
@@ -63,6 +66,7 @@ Options:
     -a|--import-alias	     Alias for imported payload
 
 Auxiliary:
+    -f|--force          	 Force selected action
     -v|--verbose        	 Enable debug output
     -h|--help           	 Enable debug output
 

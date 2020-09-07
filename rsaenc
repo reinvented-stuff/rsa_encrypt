@@ -100,18 +100,6 @@ init_rc() {
 
 }
 
-init_private_key() {
-	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && return 2
-
-	# if [[ ! -f "${LOCAL_PRIVATEKEY_FILENAME}" ]]; then
-	# 	cp "${LOCAL_PRIVATEKEY_FILENAME}" "${LOCAL_PRIVATEKEY_STORAGE}/${LOCAL_PRIVATEKEY_FILENAME##*/}.pem"
-	# 	ssh-keygen -p -N "" -m PEM -f "${LOCAL_PRIVATEKEY_STORAGE}/${LOCAL_PRIVATEKEY_FILENAME##*/}.pem" > /dev/null 2>&1
-	# fi
-	[[ ! -f "${LOCAL_PRIVATEKEY_FILENAME}" ]] && error "Can't open private file: '${LOCAL_PRIVATEKEY_FILENAME}'"
-	echo "${LOCAL_PRIVATEKEY_FILENAME}"
-
-}
-
 
 export_pubkey() {
 
@@ -189,7 +177,7 @@ decrypt_content() {
 		error "Unsupported input source type: '${input_source_type}'"
 	fi
 
-	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "$(init_private_key)"
+	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "${LOCAL_PRIVATEKEY_FILENAME}"
 
 }
 
@@ -290,11 +278,19 @@ list_keystorage() {
 
 main() {
 
-	local CLI_VERBOSE
-	local CLI_EXPORT_PUBKEY
+	local CLI_RECIPIENT_PUBKEY
 	local CLI_INPUT_FILENAME
-	local CLI_IMPORT_ALIAS
+	local CLI_INPUT_STRING
+	local CLI_INPUT_FORMAT
+	local CLI_ENCRYPT
+	local CLI_DECRYPT
+	local CLI_EXPORT_PUBKEY
 	local CLI_IMPORT_PUBKEY
+	local CLI_IMPORT_PRIVKEY
+	local CLI_IMPORT_ALIAS
+	local CLI_LIST_KEYSTORAGE
+	local CLI_FORCE
+	local CLI_VERBOSE
 
 	[[ "$#" -eq 0 ]] && { usage; exit 0; }
 

@@ -1,0 +1,420 @@
+#!/bin/bash
+#
+# RSA encryption/decryption script
+#
+
+set -e -o pipefail
+
+LOCAL_RC_FILENAME="${HOME}/.rsaencrc"
+[[ -f "${LOCAL_CONFIG_FILENAME}" ]] && source "${LOCAL_RC_FILENAME}" || :
+
+VERSION="DEV"
+
+usage() {
+
+	cat << EOF
+RSA encryption/decryption tool
+Version: ${VERSION}
+Usage: $0 [-h] [-v] [-E|-I] [-i filename] [-s payload] [-a alias]
+
+Actions:
+    -e|--encrypt	         Encrypt payload
+    -d|--decrypt	         Decrypt payload
+    -E|--export-pubkey	     Export your public key in a PEM format
+    -I|--import-pubkey	     Import public key of a recipient
+    -P|--import-privkey	     Import private key for decryption
+
+Options:
+    -i|--input-filename	     Input file for a selected action
+    -s|--input-string	     Input payload as a string
+    -a|--import-alias	     Alias for imported payload
+
+Auxiliary:
+    -f|--force          	 Force selected action
+    -v|--verbose        	 Enable debug output
+    -h|--help           	 Enable debug output
+
+EOF
+
+}
+
+timestamp() {
+	date "+%F %T"
+}
+
+error() {
+        
+        [[ ! -z "${1}" ]] && msg="ERROR: ${1}" || msg="ERROR!"
+        [[ ! -z "${2}" ]] && rc="${2}" || rc=1
+        
+        echo "[$(timestamp)] ${BASH_SOURCE[1]}: line ${BASH_LINENO[0]}: ${FUNCNAME[1]}: ${msg}" >&2
+        exit "${rc}"
+}
+
+debug() {
+
+	local msg="$1"
+	local self_level=7
+	local self_level_name="debug"
+
+	if [[ "${self_level}" -le "${LOCAL_LOGLEVEL}" ]]; then	
+		echo "[$(timestamp)] [${self_level_name}] [${FUNCNAME[1]}] $msg" >&2
+		return 0
+	fi
+}
+
+info() {
+
+	local msg="$1"
+	local self_level=3
+	local self_level_name="info"
+
+	if [[ "${self_level}" -le "${LOCAL_LOGLEVEL}" ]]; then	
+		echo "[$(timestamp)] [${self_level_name}] [${FUNCNAME[1]}] $msg" >&2
+		return 0
+	fi
+}
+
+warning() {
+
+	local msg="$1"
+	local self_level=2
+	local self_level_name="warning"
+
+	if [[ "${self_level}" -le "${LOCAL_LOGLEVEL}" ]]; then	
+		echo "[$(timestamp)] [${self_level_name}] [${FUNCNAME[1]}] $msg" >&2
+		return 0
+	fi
+}
+
+init_rc() {
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && LOCAL_PUBKEY_STORAGE="${HOME}/.local/rsaenc/keys"
+	[[ ! -d "${LOCAL_PUBKEY_STORAGE}" ]] && mkdir -pv "${LOCAL_PUBKEY_STORAGE}"
+
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && LOCAL_PRIVATEKEY_STORAGE="${HOME}/.local/rsaenc/private"
+	[[ ! -d "${LOCAL_PRIVATEKEY_STORAGE}" ]] && mkdir -pv "${LOCAL_PRIVATEKEY_STORAGE}"
+
+	[[ -z "${LOCAL_PUBKEY_FILENAME}" ]] && LOCAL_PUBKEY_FILENAME="${HOME}/.ssh/id_rsa.pub"
+	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && LOCAL_PRIVATEKEY_FILENAME="${LOCAL_PRIVATEKEY_STORAGE}/id_rsa.pem"
+	[[ -z "${LOCAL_LOGLEVEL}" ]] && LOCAL_LOGLEVEL="5"
+
+}
+
+init_private_key() {
+	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && return 2
+
+	# if [[ ! -f "${LOCAL_PRIVATEKEY_FILENAME}" ]]; then
+	# 	cp "${LOCAL_PRIVATEKEY_FILENAME}" "${LOCAL_PRIVATEKEY_STORAGE}/${LOCAL_PRIVATEKEY_FILENAME##*/}.pem"
+	# 	ssh-keygen -p -N "" -m PEM -f "${LOCAL_PRIVATEKEY_STORAGE}/${LOCAL_PRIVATEKEY_FILENAME##*/}.pem" > /dev/null 2>&1
+	# fi
+	[[ ! -f "${LOCAL_PRIVATEKEY_FILENAME}" ]] && error "Can't open private file: '${LOCAL_PRIVATEKEY_FILENAME}'"
+	echo "${LOCAL_PRIVATEKEY_FILENAME}"
+
+}
+
+
+export_pubkey() {
+
+	[[ -z "${LOCAL_PUBKEY_FILENAME}" ]] && return 2
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+
+	local pubkey_filename
+	local tmp_pubkey_filename
+	local pem_pubkey_filename
+
+	tmp_pubkey_filename="$(mktemp)"
+	pem_pubkey_filename="${LOCAL_PUBKEY_STORAGE}/${LOCAL_PUBKEY_FILENAME##*/}.pem"
+
+	ssh-keygen -f "${LOCAL_PUBKEY_FILENAME}" -e -m pem > "${tmp_pubkey_filename}"
+	openssl rsa -in "${tmp_pubkey_filename}" -RSAPublicKey_in -pubout > "${pem_pubkey_filename}" 2>/dev/null
+	rm "${tmp_pubkey_filename}"
+
+	cat "${pem_pubkey_filename}"
+
+}
+
+encrypt_content() {
+
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+
+	local content
+	local recipient_pubkey
+	local input_source
+	local input_source_type
+
+
+	[[ ! -z "${1}" ]] && recipient_pubkey="${1}" || error "Please, set the recipient public key"
+	[[ ! -z "${2}" ]] && input_source="${2}" || error "Please, set the input source with the content"
+	[[ ! -z "${3}" ]] && input_source_type="${3}" || input_source_type="string"
+
+	[[ ! -f "${LOCAL_PUBKEY_STORAGE}/${recipient_pubkey}" ]] && error "Can't open recipient pubkey file: '${recipient_pubkey}'"
+
+	if [[ "${input_source_type}" == "string" ]]; then
+		debug "Encrypting a sting"
+		content="${input_source}"
+	
+	elif [[ "${input_source_type}" == "file" ]]; then
+		[[ ! -f "${input_source}" ]] && error "Can't open file: '${input_source}'"
+		content="$( cat "${input_source}" )"
+	
+	else
+		error "Unsupported input source type: '${input_source_type}'"
+	fi
+
+	echo "${content}" | openssl rsautl -pubin -inkey "${LOCAL_PUBKEY_STORAGE}/${recipient_pubkey}" -encrypt | base64
+
+}
+
+decrypt_content() {
+
+	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && return 2
+
+	local content
+	local recipient_pubkey
+	local input_source
+	local input_source_type
+
+
+	[[ ! -z "${1}" ]] && input_source="${1}" || error "Please, set the input source with the content"
+	[[ ! -z "${2}" ]] && input_source_type="${2}" || input_source_type="string"
+
+	if [[ "${input_source_type}" == "string" ]]; then
+		debug "Encrypting a sting"
+		content="${input_source}"
+	
+	elif [[ "${input_source_type}" == "file" ]]; then
+		[[ ! -f "${input_source}" ]] && error "Can't open file: '${input_source}'"
+		content="$( cat "${input_source}" )"
+	
+	else
+		error "Unsupported input source type: '${input_source_type}'"
+	fi
+
+	echo "openssl rsautl -decrypt -oaep -inkey $(init_private_key)"
+	echo "${content}" | base64 --decode | openssl rsautl -decrypt -oaep -inkey "$(init_private_key)"
+
+}
+
+import_pubkey() {
+
+	[[ -z "${LOCAL_PUBKEY_FILENAME}" ]] && return 2
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+
+	local input_source
+	local input_source_type
+	local pubkey_filename
+	local pubkey_alias
+	local tmp_pubkey_filename
+	local pem_pubkey_filename
+	local pem_pubkey_basename
+
+	[[ ! -z "${1}" ]] && input_source="${1}" || error "Please, set the input source with a public key"
+	[[ ! -z "${2}" ]] && input_source_type="${2}" || input_source_type="file"
+	[[ ! -z "${3}" ]] && pubkey_alias="${3}" || pubkey_alias="id_rsa_$(date +%s)"
+
+	if [[ "${input_source_type}" == "string" ]]; then
+		debug "Importing public key from a sting"
+		debug "Preparing a tempfile"
+		pubkey_filename=$(mktemp)
+		echo "${input_source}" > "${pubkey_filename}"
+	
+	elif [[ "${input_source_type}" == "file" ]]; then
+		[[ ! -f "${input_source}" ]] && error "Can't open public key file: '${input_source}'"
+		pubkey_filename="${input_source}"
+	
+	else
+		error "Unsupported input source type: '${input_source_type}'"
+	fi
+
+	if [[ ! -z "${pubkey_alias}" ]]; then
+		pem_pubkey_basename="${pubkey_alias}.pem"
+	else
+		pem_pubkey_basename="${LOCAL_PUBKEY_FILENAME##*/}.pem"
+	fi
+
+	pem_pubkey_filename="${LOCAL_PUBKEY_STORAGE}/${pem_pubkey_basename}"
+	tmp_pubkey_filename="$(mktemp)"
+
+	if [[ "${FORCE_ACTOIN}" != "1" ]] && [[ -f "${pem_pubkey_filename}" ]]; then
+		error "Public key already exists: ${pem_pubkey_basename}"
+	fi
+
+	ssh-keygen -f "${LOCAL_PUBKEY_FILENAME}" -e -m pem > "${tmp_pubkey_filename}"
+	openssl rsa -in "${tmp_pubkey_filename}" -RSAPublicKey_in -pubout > "${pem_pubkey_filename}" 2>/dev/null
+	rm "${tmp_pubkey_filename}"
+
+	echo "Saved as '${pem_pubkey_basename}'"
+	cat "${pem_pubkey_filename}"
+
+}
+
+import_private_key() {
+
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
+
+	local private_key_filename
+	local private_key_alias
+	local private_key_basename
+	
+	[[ ! -z "${1}" ]] && private_key_filename="${1}" || error "Please, set the input source with a public key"
+	[[ ! -z "${2}" ]] && private_key_alias="${2}"
+
+
+	if [[ ! -z "${pubkey_alias}" ]]; then
+		private_key_basename="${pubkey_alias}.pem"
+	else
+		private_key_basename="${private_key_filename##*/}.pem"
+	fi
+
+	pem_privatekey_filename="${LOCAL_PRIVATEKEY_STORAGE}/${private_key_basename}"
+	
+	if [[ "${FORCE_ACTOIN}" != "1" ]] && [[ -f "${pem_privatekey_filename}" ]]; then
+		error "Private key already exists: ${pem_privatekey_filename}"
+	fi
+
+	cp "${private_key_filename}" "${pem_privatekey_filename}"
+	ssh-keygen -p -N "" -m PEM -f "${pem_privatekey_filename}"
+
+	echo "Saved as '${pem_privatekey_filename}'"
+
+}
+
+list_keystorage() {
+
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+	[[ ! -d "${LOCAL_PUBKEY_STORAGE}" ]] && error "Please, make sure your key storage is initialised: ${LOCAL_PUBKEY_STORAGE}"
+	
+	ls "${LOCAL_PUBKEY_STORAGE}" | while read line; do
+		echo "${line}"
+	done
+}
+
+main() {
+
+	local CLI_VERBOSE
+	local CLI_EXPORT_PUBKEY
+	local CLI_INPUT_FILENAME
+	local CLI_IMPORT_ALIAS
+	local CLI_IMPORT_PUBKEY
+
+	[[ "$#" -eq 0 ]] && { usage; exit 0; }
+
+	while [[ "$#" -gt 0 ]]; do 
+		case "${1}" in
+			-r|--recipient-pubkey)
+				[[ -z "${CLI_RECIPIENT_PUBKEY}" ]] && CLI_RECIPIENT_PUBKEY="${2}" || error "Argument already set: -r"; shift; shift;;
+
+			-i|--input-filename)
+				[[ -z "${CLI_INPUT_FILENAME}" ]] && CLI_INPUT_FILENAME="${2}" || error "Argument already set: -i"; shift; shift;;
+
+			-s|--input-string)
+				[[ -z "${CLI_INPUT_STRING}" ]] && CLI_INPUT_STRING="${2}" || error "Argument already set: -s"; shift; shift;;
+
+			-F|--input-format)
+				[[ -z "${CLI_INPUT_FORMAT}" ]] && CLI_INPUT_FORMAT="${2}" || error "Argument already set: -F"; shift; shift;;
+
+			-e|--encrypt)
+				[[ -z "${CLI_ENCRYPT}" ]] && CLI_ENCRYPT=1 || error "Parameter already set: -e"; shift;;
+
+			-d|--decrypt)
+				[[ -z "${CLI_DECRYPT}" ]] && CLI_DECRYPT=1 || error "Parameter already set: -d"; shift;;
+
+			-E|--export-pubkey)
+				[[ -z "${CLI_EXPORT_PUBKEY}" ]] && CLI_EXPORT_PUBKEY=1 || error "Parameter already set: -E"; shift;;
+
+			-I|--import-pubkey)
+				[[ -z "${CLI_IMPORT_PUBKEY}" ]] && CLI_IMPORT_PUBKEY=1 || error "Parameter already set: -I"; shift;;
+
+			-P|--import-privkey)
+				[[ -z "${CLI_IMPORT_PRIVKEY}" ]] && CLI_IMPORT_PRIVKEY=1 || error "Parameter already set: -P"; shift;;
+
+			-a|--import-alias)
+				[[ -z "${CLI_IMPORT_ALIAS}" ]] && CLI_IMPORT_ALIAS="${2}" || error "Argument already set: -a"; shift; shift;;
+
+			-L|--list-keystorage)
+				[[ -z "${CLI_LIST_KEYSTORAGE}" ]] && CLI_LIST_KEYSTORAGE=1 || error "Parameter already set: -L"; shift;;
+
+			-f|--force)
+				[[ -z "${CLI_FORCE}" ]] && CLI_FORCE=1 || error "Parameter already set: -f"; shift;;
+
+			-v|--verbose)
+				[[ -z "${CLI_VERBOSE}" ]] && CLI_VERBOSE=1 || error "Parameter already set: -v"; shift;;
+
+			-h|--help) usage; exit 0;;
+			
+			*) error "Unknown parameter passed: '${1}'"; shift; shift;;
+		esac 
+	done
+
+	if [[ "${CLI_LIST_KEYSTORAGE}" == "1" ]]; then
+		debug "Listing keystorage"
+		list_keystorage
+	fi
+
+	if [[ "${CLI_FORCE}" == "1" ]]; then
+		export FORCE_ACTOIN=1
+	fi
+
+	if [[ "${CLI_EXPORT_PUBKEY}" == "1" ]]; then
+		debug "Exporting your public key"
+		export_pubkey
+	fi
+
+	if [[ "${CLI_IMPORT_PRIVKEY}" == "1" ]]; then
+		debug "Exporting your public key"
+		import_private_key "${CLI_INPUT_FILENAME}"
+	fi
+
+	if [[ "${CLI_IMPORT_PUBKEY}" == "1" ]]; then
+
+		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			error "You only can use one: input file or input string"
+
+		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
+			debug "Importing public key from file ${CLI_INPUT_FILENAME} (alias '${CLI_IMPORT_ALIAS}')"
+			import_pubkey "${CLI_INPUT_FILENAME}" "file" "${CLI_IMPORT_ALIAS}"
+
+		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			debug "Importing public key from string (alias '${CLI_IMPORT_ALIAS}')"
+			import_pubkey "${CLI_INPUT_STRING}" "string" "${CLI_IMPORT_ALIAS}"
+
+		fi
+	fi
+
+	if [[ "${CLI_ENCRYPT}" == "1" ]]; then
+
+		if [[ -z "${CLI_RECIPIENT_PUBKEY}" ]]; then
+			error "Please, set the recipient public key"
+		fi
+
+		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			error "You only can use one: input file or input string"
+
+		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
+			encrypt_content "${CLI_RECIPIENT_PUBKEY}" "${CLI_INPUT_FILENAME}" "file"
+
+		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			encrypt_content "${CLI_RECIPIENT_PUBKEY}" "${CLI_INPUT_STRING}" "string"
+
+		fi
+	fi
+
+	if [[ "${CLI_DECRYPT}" == "1" ]]; then
+
+		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			error "You only can use one: input file or input string"
+
+		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
+			decrypt_content "${CLI_INPUT_FILENAME}" "file"
+
+		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			decrypt_content "${CLI_INPUT_STRING}" "string"
+
+		fi
+	fi
+
+}
+
+init_rc
+main "$@"

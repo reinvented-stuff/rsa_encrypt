@@ -3,6 +3,34 @@ RSA encrypt/decrypt tool
 
 Helps you to encrypt messages using someone else's public SSH RSA key and decrypting messages using your private SSH RSA key.
 
+# Maximum message length
+
+Message length limit depends on your private key. There are some research results:
+
+```
+$ ./rsaenc -e -s "${CONTENT_OF_117_CHARS}" -r id_rsa_1024.pem
+ok
+
+$ ./rsaenc -e -s "${CONTENT_OF_118_CHARS}" -r id_rsa_1024.pem
+fail
+```
+
+```
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_245_CHARS}" -r id_rsa_2048.pem
+ok
+
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_246_CHARS}" -r id_rsa_2048.pem
+fail
+```
+
+```
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_501_CHARS}" -r id_rsa_4096.pem
+ok
+
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_502_CHARS}" -r id_rsa_4096.pem
+fail
+```
+
 # Examples
 
 ## Import your private key
@@ -51,11 +79,14 @@ ssh root password: VHo&EdY%thjEGq6C
 # Usage
 
 ```
-Usage: rsaenc [-h] [-v] [-E|-I] [-i filename] [-s payload] [-a alias]
+Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P] [-i filename] [-s payload] [-a alias]
 
 Actions:
+    -e|--encrypt	         Encrypt payload
+    -d|--decrypt	         Decrypt payload
     -E|--export-pubkey	     Export your public key in a PEM format
     -I|--import-pubkey	     Import public key of a recipient
+    -P|--import-privkey	     Import private key for decryption
 
 Options:
     -i|--input-filename	     Input file for a selected action
@@ -63,6 +94,7 @@ Options:
     -a|--import-alias	     Alias for imported payload
 
 Auxiliary:
+    -f|--force          	 Force selected action
     -v|--verbose        	 Enable debug output
     -h|--help           	 Enable debug output
 

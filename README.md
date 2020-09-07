@@ -3,6 +3,34 @@ RSA encrypt/decrypt tool
 
 Helps you to encrypt messages using someone else's public SSH RSA key and decrypting messages using your private SSH RSA key.
 
+# Maximum message length
+
+Message length limit depends on your private key. There are some research results:
+
+```
+$ ./rsaenc -e -s "${CONTENT_OF_117_CHARS}" -r id_rsa_1024.pem
+ok
+
+$ ./rsaenc -e -s "${CONTENT_OF_118_CHARS}" -r id_rsa_1024.pem
+fail
+```
+
+```
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_245_CHARS}" -r id_rsa_2048.pem
+ok
+
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_246_CHARS}" -r id_rsa_2048.pem
+fail
+```
+
+```
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_501_CHARS}" -r id_rsa_4096.pem
+ok
+
+bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_502_CHARS}" -r id_rsa_4096.pem
+fail
+```
+
 # Examples
 
 ## Import your private key

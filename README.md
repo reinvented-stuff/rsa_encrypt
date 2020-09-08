@@ -75,6 +75,8 @@ PUBLIC KEYS:
 
 PRIVATE KEYS:
 1   my_default_private_key.pem
+
+DEFAULT: my_default_private_key.pem
 ```
 
 ### Export your public key
@@ -190,6 +192,8 @@ PUBLIC KEYS:
 
 PRIVATE KEYS:
 1   id_rsa.pem
+
+DEFAULT: id_rsa.pem
 ```
 
 ## Import someone else's public key from string
@@ -210,6 +214,8 @@ PUBLIC KEYS:
 
 PRIVATE KEYS:
 1   id_rsa.pem
+
+DEFAULT: id_rsa.pem
 ```
 
 ## Encrypt a message
@@ -259,6 +265,8 @@ PRIVATE KEYS:
 2   id_rsa_1024.pem
 3   id_rsa_2048.pem
 4   id_rsa_4096.pem
+
+DEFAULT: id_rsa_1024.pem
 ```
 
 ```
@@ -267,3 +275,36 @@ ssh root password: VHo&EdY%thjEGq6C
 ```
 
 
+## Default private key
+
+You can choose your default private key in order to save time on puching in a decryption command. If you have a primary private key you use most of the time, use `-D -k your_private_key.pem` parameters to manipulate default private key.
+
+The first imported private key will be set as default.
+
+First start:
+```
+$ ./rsaenc -L
+PUBLIC KEYS:
+
+PRIVATE KEYS:
+
+DEFAULT: 
+```
+
+Imported the first private key:
+```
+$ ./rsaenc -P -i id_rsa_1024
+Your identification has been saved with the new passphrase.
+Saved as '/home/username/.local/rsaenc/private/id_rsa_1024.pem'
+```
+
+After the first import:
+```
+$ ./rsaenc -L
+PUBLIC KEYS:
+
+PRIVATE KEYS:
+1   id_rsa_1024.pem
+
+DEFAULT: id_rsa_1024.pem
+```

@@ -36,7 +36,7 @@ Options:
 Auxiliary:
     -f|--force             Force selected action
     -v|--verbose           Enable debug output
-    -h|--help              Enable debug output
+    -h|--help              Show help
 
 EOF
 

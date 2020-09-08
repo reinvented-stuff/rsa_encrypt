@@ -1,20 +1,32 @@
 # rsa_encrypt
 RSA encrypt/decrypt tool
 
-Helps you to encrypt messages using someone else's public SSH RSA key and decrypting messages using your private SSH RSA key.
+Helps you to encrypt data using someone else's public SSH RSA key and decrypting messages using your private SSH RSA key.
 
 # Releases
-
-Latest release: 
+ 
 rsaenc — [Download](https://github.com/pavelkim/rsa_encrypt/releases/latest/download/rsaenc)
 
 # Quick start
+
+## On the very start
+
+Nothing is imported on the first start. You'll need to import someone else's RSA Public Key to encrypt messages for them and/or your RSA Private Key so you could decrypt data sent to you by someone else.
+
+```
+$ ./rsaenc -L
+PUBLIC KEYS:
+
+PRIVATE KEYS:
+
+DEFAULT: 
+```
 
 ## Start encrypting for someone else
 
 ### Import recipient's public key
 
-From file:
+From a file:
 ```
 $ rsaenc -I -a "recipient_name" -i /tmp/prince_arthur.pub
 ```
@@ -34,7 +46,7 @@ PUBLIC KEYS:
 
 ### Encrypt data
 
-From file:
+From a file:
 ```
 $ rsaenc -e -r "recipient_name" -i ~/sensitive_information.txt
 ogPpOBEjnRC9Fll9kNADolmrpr8/TS/05/zoPUPlDbtNrKYDO48ZHj35hy/VX5gpA9WA+QuvZMKt8Ifukhm3U6WxMOGvVCYOVAsw2xy2RgaWbmlXK3ShjwbRJtsLSvTMNZK24dlnVIu6StUIuQ8MBMZMhqaNvwVCDm1hGfG9LsgvT5i1XuQ3yt+4rKnmQ9KkHBBZvxg5iyd+Z/uoK09wagi1pZgKnP309hw48iHOBg/KXs9JXA5+hQLgNEWcybyLwajPSfNJ2k8aDv9aWn03QLy4sh52GSGlEg4xnFzAa9HrVoAe/rX2DI2Vh3YaJDogUvxzG06Z48G6xs/dUbeTkG==

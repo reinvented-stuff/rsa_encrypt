@@ -96,9 +96,10 @@ init_rc() {
 
 	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && LOCAL_PRIVATEKEY_STORAGE="${HOME}/.local/rsaenc/private"
 	[[ ! -d "${LOCAL_PRIVATEKEY_STORAGE}" ]] && mkdir -pv "${LOCAL_PRIVATEKEY_STORAGE}"
+	[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/.default" ]] && touch "${LOCAL_PRIVATEKEY_STORAGE}/.default"
 
 	[[ -z "${LOCAL_PUBKEY_FILENAME}" ]] && LOCAL_PUBKEY_FILENAME="${HOME}/.ssh/id_rsa.pub"
-	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && LOCAL_PRIVATEKEY_FILENAME="${LOCAL_PRIVATEKEY_STORAGE}/id_rsa.pem"
+	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && LOCAL_PRIVATEKEY_FILENAME="${LOCAL_PRIVATEKEY_STORAGE}/$( get_default_private_key )"
 	[[ -z "${LOCAL_LOGLEVEL}" ]] && LOCAL_LOGLEVEL="5"
 
 }
@@ -113,6 +114,8 @@ export_pubkey() {
 
 	tmp_pubkey_filename="$(mktemp)"
 	pem_pubkey_filename="${LOCAL_PUBKEY_STORAGE}/${LOCAL_PUBKEY_FILENAME##*/}.pem"
+
+	[[ ! -f "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}" ]] && error "No private keys found to export."
 
 	echo "Exporting private key: ${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}"
 	echo "ssh-rsa:"
@@ -268,6 +271,68 @@ import_private_key() {
 
 	echo "Saved as '${pem_privatekey_filename}'"
 
+	default_private_key=$( get_default_private_key )
+
+	if [[ -z "${default_private_key}" ]]; then
+		set_default_private_key "${private_key_basename}" 
+	fi
+
+}
+
+get_oldest_private_key(){
+
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
+
+	ls -tr "${LOCAL_PRIVATEKEY_STORAGE}" | head -1
+
+}
+
+get_default_private_key() {
+	
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
+
+	[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/.default" ]] && touch "${LOCAL_PRIVATEKEY_STORAGE}/.default"
+	
+	if [[ -s "${LOCAL_PRIVATEKEY_STORAGE}/.default" ]]; then
+		debug "Default private key was never set."
+		oldest_private_key=$( get_oldest_private_key )
+
+		if [[ -z "${oldest_private_key}" ]]; then
+			echo ""
+			return 0
+		else
+			echo "${oldest_private_key}" > "${LOCAL_PRIVATEKEY_STORAGE}/.default"
+			echo "${oldest_private_key}"
+			return 0
+		fi
+	
+	else 
+		default_private_key=$(cat "${LOCAL_PRIVATEKEY_STORAGE}/.default")
+	
+		if [[ -f "${LOCAL_PRIVATEKEY_STORAGE}/${default_private_key}" ]]; then
+			echo "${default_private_key}"
+			return 0
+		else
+			get_oldest_private_key > "${LOCAL_PRIVATEKEY_STORAGE}/.default"
+			cat "${LOCAL_PRIVATEKEY_STORAGE}/.default"
+			return 0
+		fi
+
+	fi
+
+}
+
+set_default_private_key() {
+
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
+
+	[[ ! -z "${1}" ]] && private_key_filename="${1}" || error "Please, set the input source with a private key"
+
+	[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/${private_key_filename}" ]] && error "Private key not found: '${private_key_filename}'"
+	echo "${private_key_filename}" > "${LOCAL_PRIVATEKEY_STORAGE}/.default"
+
+	echo "Default private key: '${private_key_filename}'"
+
 }
 
 list_keystorage() {
@@ -278,16 +343,21 @@ list_keystorage() {
 	[[ ! -d "${LOCAL_PUBKEY_STORAGE}" ]] && error "Please, make sure your key storage is initialised: ${LOCAL_PUBKEY_STORAGE}"
 	[[ ! -d "${LOCAL_PRIVATEKEY_STORAGE}" ]] && error "Please, make sure your key storage is initialised: ${LOCAL_PRIVATEKEY_STORAGE}"
 	
+	default_private_key=$( get_default_private_key )
+
 	echo "PUBLIC KEYS:"
-	ls "${LOCAL_PUBKEY_STORAGE}" | nl | while read line; do
+	ls "${LOCAL_PUBKEY_STORAGE}" | cat -n | while read line; do
 		echo "${line}"
 	done
 	
 	echo ""	
 	echo "PRIVATE KEYS:"
-	ls "${LOCAL_PRIVATEKEY_STORAGE}" | nl | while read line; do
+	ls "${LOCAL_PRIVATEKEY_STORAGE}" | cat -n | while read line; do
 		echo "${line}"
 	done
+
+	echo ""
+	echo "DEFAULT: ${default_private_key}"
 }
 
 main() {
@@ -299,6 +369,7 @@ main() {
 	local CLI_ENCRYPT
 	local CLI_DECRYPT
 	local CLI_EXPORT_PUBKEY
+	local CLI_SET_DEFAULT
 	local CLI_IMPORT_PUBKEY
 	local CLI_IMPORT_PRIVKEY
 	local CLI_IMPORT_ALIAS
@@ -330,6 +401,9 @@ main() {
 
 			-E|--export-pubkey)
 				[[ -z "${CLI_EXPORT_PUBKEY}" ]] && CLI_EXPORT_PUBKEY=1 || error "Parameter already set: -E"; shift;;
+
+			-D|--set-default)
+				[[ -z "${CLI_SET_DEFAULT}" ]] && CLI_SET_DEFAULT=1 || error "Parameter already set: -D"; shift;;
 
 			-I|--import-pubkey)
 				[[ -z "${CLI_IMPORT_PUBKEY}" ]] && CLI_IMPORT_PUBKEY=1 || error "Parameter already set: -I"; shift;;
@@ -376,6 +450,12 @@ main() {
 	if [[ "${CLI_IMPORT_PRIVKEY}" == "1" ]]; then
 		debug "Exporting your public key"
 		import_private_key "${CLI_INPUT_FILENAME}"
+	fi
+
+	if [[ "${CLI_SET_DEFAULT}" == "1" ]]; then
+		debug "Setting a default private key"
+		[[ -z "${CLI_PRIVATE_KEY}" ]] && error "Please, set a private key to make as default."
+		set_default_private_key "${CLI_PRIVATE_KEY}"
 	fi
 
 	if [[ "${CLI_IMPORT_PUBKEY}" == "1" ]]; then

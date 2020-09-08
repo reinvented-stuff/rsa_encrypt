@@ -292,14 +292,16 @@ get_default_private_key() {
 	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
 
 	[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/.default" ]] && touch "${LOCAL_PRIVATEKEY_STORAGE}/.default"
+	default_private_key=$(cat "${LOCAL_PRIVATEKEY_STORAGE}/.default")
 	
-	if [[ -s "${LOCAL_PRIVATEKEY_STORAGE}/.default" ]]; then
+	if [[ -z "${default_private_key}" ]]; then
 		debug "Default private key was never set."
 		oldest_private_key=$( get_oldest_private_key )
 
 		if [[ -z "${oldest_private_key}" ]]; then
 			echo ""
 			return 0
+		
 		else
 			echo "${oldest_private_key}" > "${LOCAL_PRIVATEKEY_STORAGE}/.default"
 			echo "${oldest_private_key}"
@@ -307,8 +309,7 @@ get_default_private_key() {
 		fi
 	
 	else 
-		default_private_key=$(cat "${LOCAL_PRIVATEKEY_STORAGE}/.default")
-	
+
 		if [[ -f "${LOCAL_PRIVATEKEY_STORAGE}/${default_private_key}" ]]; then
 			echo "${default_private_key}"
 			return 0
@@ -331,7 +332,7 @@ set_default_private_key() {
 	[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/${private_key_filename}" ]] && error "Private key not found: '${private_key_filename}'"
 	echo "${private_key_filename}" > "${LOCAL_PRIVATEKEY_STORAGE}/.default"
 
-	echo "Default private key: '${private_key_filename}'"
+	echo "Default private key: '$(get_default_private_key)'"
 
 }
 
@@ -454,6 +455,7 @@ main() {
 
 	if [[ "${CLI_SET_DEFAULT}" == "1" ]]; then
 		debug "Setting a default private key"
+		
 		[[ -z "${CLI_PRIVATE_KEY}" ]] && error "Please, set a private key to make as default."
 		set_default_private_key "${CLI_PRIVATE_KEY}"
 	fi

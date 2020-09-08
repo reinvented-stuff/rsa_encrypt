@@ -15,7 +15,7 @@ usage() {
 	cat << EOF
 RSA encryption/decryption tool
 Version: ${VERSION}
-Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L] [-r keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
+Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-r keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt	         Encrypt payload
@@ -24,6 +24,7 @@ Actions:
     -I|--import-pubkey	     Import public key of a recipient
     -P|--import-privkey	     Import private key for decryption
     -L|--list-keystorage	 List imported keys
+    -D|--set-default	     Choose default private key to use
 
 Options:
     -i|--input-filename	     Input file for a selected action

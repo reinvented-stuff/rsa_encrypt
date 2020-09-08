@@ -4,8 +4,8 @@ RSA encrypt/decrypt tool
 Helps you to encrypt data using someone else's public SSH RSA key and decrypting messages using your private SSH RSA key.
 
 # Releases
- 
-rsaenc — [Download](https://github.com/pavelkim/rsa_encrypt/releases/latest/download/rsaenc)
+
+rsaenc — [Download](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc)
 
 # Examples
 

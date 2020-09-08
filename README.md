@@ -6,7 +6,7 @@ Helps you to encrypt messages using someone else's public SSH RSA key and decryp
 # Releases
 
 Latest release: 
-rsaenc — [Download](https://github.com/pavelkim/rsa_encrypt/releases/latest/download/rsaenc)
+rsaenc — [Download](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc)
 
 # Quick start
 

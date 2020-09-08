@@ -18,25 +18,25 @@ Version: ${VERSION}
 Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-r keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
-    -e|--encrypt	         Encrypt payload
-    -d|--decrypt	         Decrypt payload
-    -E|--export-pubkey	     Export your public key in a PEM format
-    -I|--import-pubkey	     Import public key of a recipient
-    -P|--import-privkey	     Import private key for decryption
-    -L|--list-keystorage	 List imported keys
-    -D|--set-default	     Choose default private key to use
+    -e|--encrypt           Encrypt payload
+    -d|--decrypt           Decrypt payload
+    -E|--export-pubkey     Export your public key in a PEM format
+    -I|--import-pubkey     Import public key of a recipient
+    -P|--import-privkey    Import private key for decryption
+    -L|--list-keystorage   List imported keys
+    -D|--set-default       Choose default private key to use
 
 Options:
-    -i|--input-filename	     Input file for a selected action
-    -s|--input-string	     Input payload as a string
-    -a|--import-alias	     Alias for imported payload
-    -k|--private-key	     Private key file to use
-    -r|--recipient	         Recipient's public key name
+    -i|--input-filename    Input file for a selected action
+    -s|--input-string      Input payload as a string
+    -a|--import-alias      Alias for imported payload
+    -k|--private-key       Private key file to use
+    -r|--recipient         Recipient's public key name
 
 Auxiliary:
-    -f|--force          	 Force selected action
-    -v|--verbose        	 Enable debug output
-    -h|--help           	 Enable debug output
+    -f|--force             Force selected action
+    -v|--verbose           Enable debug output
+    -h|--help              Enable debug output
 
 EOF
 

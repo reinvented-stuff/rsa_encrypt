@@ -29,6 +29,6 @@ clean:
 
 install:
 	install -d $(DESTDIR)$(PREFIX)
-	install -m 644 rsaenc $(DESTDIR)$(PREFIX)
-	install -m 644 README.md $(DESTDIR)$(PREFIX)
-	
+	install -m 755 rsaenc $(DESTDIR)/usr/bin
+	install -m 644 README.md $(DESTDIR)/usr/share/doc/$(PROGNAME_VERSION)
+

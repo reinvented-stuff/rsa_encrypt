@@ -162,3 +162,9 @@ jobs:
         echo "::set-output name=path_to_deb_file::/home/runner/rsaenc-${version}_amd64.deb"
         echo "::set-output name=deb_filename::rsaenc-${version}_amd64.deb"
 
+    - name: Install DEB package
+      id: install_deb_package
+      run: |
+        sudo dpkg -i "${{steps.verify_deb_package.outputs.path_to_deb_file}}"
+        ls -la /opt/rsaenc
+        /opt/rsaenc/rsaenc -h

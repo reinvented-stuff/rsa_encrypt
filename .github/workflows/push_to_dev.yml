@@ -155,7 +155,7 @@ jobs:
         mv debbuild.deb rsaenc-${version}_amd64.deb
 
     - name: Verify DEB package
-      id: verify_rpm_package
+      id: verify_deb_package
       run: |
         version="$(cat .version)"
         ls -la "/home/runner/rsaenc-${version}_amd64.deb"

@@ -115,7 +115,50 @@ jobs:
       id: verify_rpm_package
       run: |
         version="$(cat .version)"
-        ls -la /home/runner/rpmbuild/RPMS/x86_64/rsaenc-${version}-1.x86_64.rpm
+        ls -la "/home/runner/rpmbuild/RPMS/x86_64/rsaenc-${version}-1.x86_64.rpm"
         echo "::set-output name=path_to_rpm_file::/home/runner/rpmbuild/RPMS/x86_64/rsaenc-${version}-1.x86_64.rpm"
         echo "::set-output name=rpm_filename::rsaenc-${version}-1.x86_64.rpm"
+
+    - name: Setup DEB Build environment
+      id: setup_debbuild_env
+      shell: bash
+      run: |
+
+        version="$(cat .version)"
+        size="$(stat --printf="%s" rsaenc)"
+
+        mkdir -v /home/runner/debbuild
+        mkdir -v /home/runner/debbuild/DEBIAN
+        mkdir -vp /home/runner/debbuild/opt/rsaenc
+
+        cp -v ".deb/control.tpl" /home/runner/debbuild/DEBIAN
+        mv -v /home/runner/debbuild/DEBIAN/control.tpl /home/runner/debbuild/DEBIAN/control
+        
+        cp -va "rsaenc-${version}/" /home/runner/debbuild/opt/rsaenc
+
+        sed -i"" \
+          -e "s/__VERSION__/${version}/" \
+          -e "s/__SIZE__/${size}/" \
+          /home/runner/debbuild/DEBIAN/control
+        
+        cat -n /home/runner/debbuild/DEBIAN/control
+
+    - name: Build DEB package
+      id: build_deb_package
+      shell: bash
+      run: |
+        version="$(cat .version)"
+
+        cd /home/runner
+        dpkg-deb --build debbuild
+      
+        mv debbuild.deb rsaenc-${version}_amd64.deb
+
+    - name: Verify DEB package
+      id: verify_rpm_package
+      run: |
+        version="$(cat .version)"
+        ls -la "/home/runner/rsaenc-${version}_amd64.deb"
+        echo "::set-output name=path_to_deb_file::/home/runner/rsaenc-${version}_amd64.deb"
+        echo "::set-output name=deb_filename::rsaenc-${version}_amd64.deb"
 

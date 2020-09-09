@@ -7,6 +7,113 @@ Helps you to encrypt data using someone else's public SSH RSA key and decrypting
 
 rsaenc — [Download](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc)
 
+# Installation
+
+There are several options of how to install the software.
+
+## Install on RHEL/CentOS 8
+
+Not available yet
+
+## Install on RHEL/CentOS 7
+
+Yum repository URL: [https://yum.reinvented-stuff.com/rhel/7/](https://yum.reinvented-stuff.com/rhel/7/)  
+Yum configuration: [reinvented-stuff.repo](https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo)  
+GPG Public Key: [RPM-GPG-KEY-RNVSTFF-7](https://yum.reinvented-stuff.com/rhel/7/RPM-GPG-KEY-RNVSTFF-7)  
+
+### Add Reinvented Stuff's Yum repository
+
+In order to use our repository, you can use `yum-config-manager` tool to fetch .repo file from our server and include it to the local Yum configuration. The repository will become available right away.
+
+Alternatively you can manually download and copy `reinvented-stuff.repo` file into `/etc/yum.repos.d` on your server.
+
+<details>
+    <summary>Adding Reinvented Stuff Yum repository</summary>
+
+```
+$ sudo yum-config-manager --add-repo https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo
+Loaded plugins: fastestmirror
+adding repo from: https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo
+grabbing file https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo to /etc/yum.repos.d/reinvented-stuff.repo
+repo saved to /etc/yum.repos.d/reinvented-stuff.repo
+```
+
+</details>
+
+### Install package using yum
+
+
+<details>
+    <summary>Installing package</summary>
+
+```
+$ sudo yum install rsaenc
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.nodesdirect.com
+ * epel: reflector.westga.edu
+ * extras: mirror.team-cymru.com
+ * updates: mirror.ash.fastserv.com
+Resolving Dependencies
+--> Running transaction check
+---> Package rsaenc.x86_64 0:1.0.7-1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=======================================================================================
+ Package          Arch             Version            Repository                  Size
+=======================================================================================
+Installing:
+ rsaenc           x86_64           1.0.7-1            reinvented-stuff            13 k
+
+Transaction Summary
+=======================================================================================
+Install  1 Package
+
+Total download size: 13 k
+Installed size: 23 k
+Is this ok [y/d/N]: y
+Downloading packages:
+rsaenc-1.0.7-1.x86_64.rpm                                       |  13 kB  00:00:00     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : rsaenc-1.0.7-1.x86_64                                               1/1 
+  Verifying  : rsaenc-1.0.7-1.x86_64                                               1/1 
+
+Installed:
+  rsaenc.x86_64 0:1.0.7-1                                                              
+
+Complete!
+```
+</details>
+
+## Install on Debian/Ubuntu
+
+Apt repository URL: [https://deb.reinvented-stuff.com/](https://deb.reinvented-stuff.com/)  
+Apt configuration: [reinvented-stuff.list](https://deb.reinvented-stuff.com/reinvented-stuff.list)  
+GPG Public Key: [RPMDEB-GPG-KEY-RNVSTFF](https://deb.reinvented-stuff.com/DEB-GPG-KEY-RNVSTFF)  
+
+### Add our apt repository to your system
+
+```bash
+$ curl -fsS "https://deb.reinvented-stuff.com/reinvented-stuff.list" -o - | sudo tee "/etc/apt/sources.list.d/reinvented-stuff.list"
+```
+
+### Import our GPG Key so apt could verify the packages authenticity
+```bash
+$ curl -fsS "https://deb.reinvented-stuff.com/DEB-GPG-KEY-RNVSTFF" | sudo apt-key add -
+```
+
+### Install rsaenc
+
+```bash
+sudo apt update
+sudo apt install rsaenc
+```
+
 # Examples
 
 ## Import your private key
@@ -150,7 +257,6 @@ PRIVATE KEYS:
 
 DEFAULT: id_rsa_1024.pem
 ```
-
 
 # Maximum message length
 

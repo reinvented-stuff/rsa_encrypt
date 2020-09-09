@@ -26,8 +26,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %files
-/opt/rsaenc/rsaenc
-/opt/rsaenc/README.md
+%attr(755, root, root) /usr/bin/rsaenc
+%attr(644, root, root) /usr/share/doc/rsaenc-__VERSION__/README.md
 %doc
 
 

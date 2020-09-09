@@ -129,12 +129,14 @@ jobs:
 
         mkdir -v /home/runner/debbuild
         mkdir -v /home/runner/debbuild/DEBIAN
-        mkdir -vp /home/runner/debbuild/opt/rsaenc
+        mkdir -vp /home/runner/debbuild/usr/bin
+        mkdir -vp "/home/runner/debbuild/usr/share/doc/rsaenc-${version}"
 
         cp -v ".deb/control.tpl" /home/runner/debbuild/DEBIAN
         mv -v /home/runner/debbuild/DEBIAN/control.tpl /home/runner/debbuild/DEBIAN/control
         
-        cp -va "rsaenc-${version}/." /home/runner/debbuild/opt/rsaenc
+        cp -v "rsaenc-${version}/rsaenc" /home/runner/debbuild/usr/bin/
+        cp -v "rsaenc-${version}/README.md" /home/runner/debbuild/usr/share/doc/
 
         sed -i"" \
           -e "s/__VERSION__/${version}/" \
@@ -161,6 +163,14 @@ jobs:
         ls -la "/home/runner/rsaenc-${version}_amd64.deb"
         echo "::set-output name=path_to_deb_file::/home/runner/rsaenc-${version}_amd64.deb"
         echo "::set-output name=deb_filename::rsaenc-${version}_amd64.deb"
+
+    - name: Install DEB package
+      id: install_deb_package
+      run: |
+        sudo dpkg -i "${{steps.verify_deb_package.outputs.path_to_deb_file}}"
+        ls -la /usr/bin/rsaenc
+        ls -la /usr/share/doc/rsaenc*
+        rsaenc -h
 
     - name: Create a new tag
       run: |

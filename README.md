@@ -114,6 +114,69 @@ sudo apt update
 sudo apt install rsaenc
 ```
 
+## MacOS/OS X/Darwin/FreeBSD
+
+Download the latest version of the script:
+```
+$ cd ~
+$ curl -OLv "https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc"
+```
+
+Make the script executable:
+```
+$ chmod a+x rsaenc
+```
+
+Move it to $PATH location (optional):
+```
+$ sudo mv rsaenc /usr/bin/rsaenc
+```
+
+Start using rsaenc:
+```
+$ rsaenc -h
+```
+or without optional step:
+```
+$ ~/rsaenc
+```
+
+# Generate RSA keypair
+
+## Linux/FreeBSD/MacOS/OS X/Darwin
+
+Check if you already have an RSA private key:
+```
+$ ls ~/.ssh/id_rsa && echo "Found" || echo "Not found"
+```
+
+If no private keys found, or you'd like to generate a new one:
+```
+$ ssh-keygen
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/username/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/username/.ssh/id_rsa.
+Your public key has been saved in /home/username/.ssh/id_rsa.
+The key fingerprint is:
+SHA256:SpeHKhgE8jvpHcKJykcEepi7THTk9WSjAodqOdTS9bY username@laptop.local
+The key's randomart image is:
++---[RSA 2048]----+
+|oo+o.o +         |
+|oO*o. * .        |
+|*.*= . +         |
+|oXo+. . .o       |
+|+.X.. .ES .      |
+|=o.* o + .       |
+|ooo.o o          |
+|  .  .           |
+|                 |
++----[SHA256]-----+
+```
+
+Now you can import your private key using rsaenc tool.
+
 # Examples
 
 ## Import your private key
@@ -356,88 +419,15 @@ DEFAULT:
 
 ## Start encrypting for someone else
 
-### Import recipient's public key
-
-From a file:
-```
-$ rsaenc -I -a "recipient_name" -i /tmp/prince_arthur.pub
-```
-
-Plaintext:
-```
-$ rsaenc -I -a "recipient_name" -s "ssh-rsa AAAAB3NzaC1yc2EAAAABABBAB...MeV7o"
-```
-
-### Veryfy imported key
-
-```
-$ rsaenc -L
-PUBLIC KEYS:
-1   recipient_name.pem
-```
-
-### Encrypt data
-
-From a file:
-```
-$ rsaenc -e -r "recipient_name" -i ~/sensitive_information.txt
-ogPpOBEjnRC9Fll9kNADolmrpr8/TS/05/zoPUPlDbtNrKYDO48ZHj35hy/VX5gpA9WA+QuvZMKt8Ifukhm3U6WxMOGvVCYOVAsw2xy2RgaWbmlXK3ShjwbRJtsLSvTMNZK24dlnVIu6StUIuQ8MBMZMhqaNvwVCDm1hGfG9LsgvT5i1XuQ3yt+4rKnmQ9KkHBBZvxg5iyd+Z/uoK09wagi1pZgKnP309hw48iHOBg/KXs9JXA5+hQLgNEWcybyLwajPSfNJ2k8aDv9aWn03QLy4sh52GSGlEg4xnFzAa9HrVoAe/rX2DI2Vh3YaJDogUvxzG06Z48G6xs/dUbeTkG==
-```
-
-Plaintext:
-```
-$ rsaenc -e -r "recipient_name.pem" -s "password: rootroot123"
-ogPpOBEjnRC9Fll9kNADolmrpr8/TS/05/zoPUPlDbtNrKYDO48ZHj35hy/VX5gpA9WA+QuvZMKt8Ifukhm3U6WxMOGvVCYOVAsw2xy2RgaWbmlXK3ShjwbRJtsLSvTMNZK24dlnVIu6StUIuQ8MBMZMhqaNvwVCDm1hGfG9LsgvT5i1XuQ3yt+4rKnmQ9KkHBBZvxg5iyd+Z/uoK09wagi1pZgKnP309hw48iHOBg/KXs9JXA5+hQLgNEWcybyLwajPSfNJ2k8aDv9aWn03QLy4sh52GSGlEg4xnFzAa9HrVoAe/rX2DI2Vh3YaJDogUvxzG06Z48G6xs/dUbeTkG==
-```
+1. Import recipient's public key
+2. Veryfy imported key
+3. Encrypt data
+4. Pass encrypted blob to the recipient
 
 ## Start receiving encrypted data
 
-### Import your private key
-
-```
-$ rsaenc -P -i ~/.ssh/id_rsa -a "my_default_private_key"
-```
-
-### Verify imported key
-
-```
-$ rsaenc -L
-PUBLIC KEYS:
-1   recipient_name.pem
-
-PRIVATE KEYS:
-1   my_default_private_key.pem
-
-DEFAULT: my_default_private_key.pem
-```
-
-### Export your public key
-
-```
-$ rsaenc -E -k my_default_private_key.pem
-Exporting private key: /home/username/.local/rsaenc/private/my_default_private_key.pem
-ssh-rsa:
-ssh-rsa AAAAB3NzaC1y...o93UmtRXVzKQZAa8w==
-
-rsa:
------BEGIN PUBLIC KEY-----
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsmlEcYojjFkPEI3tZLI/
-...
-tbePYP6Pd1JrUV1cykGQGvMCAwEAAQ==
------END PUBLIC KEY-----
-
-```
-
-### Decrypt encrypted data
-
-Decrypt a file:
-```
-$ rsaenc -d -k my_default_private_key.pem -i root_password.txt.enc
-password: rootroot123
-```
-
-Decrypt a plaintext message:
-```
-$ rsaenc -d -k my_default_private_key.pem -s "JMzmWrqvPhcBMDy1qcYvUT...wSkXo6f3PNb/93Ct2br4="
-password: rootroot123
-```
+1. Import your private key
+2. Verify imported key
+3. Export your public key
+4. Pass your public key to the sender
+5. Decrypt encrypted data received from the sender

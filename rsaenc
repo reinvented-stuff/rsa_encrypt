@@ -294,17 +294,24 @@ remove_private_key() {
 	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
 	[[ -z "${LOCAL_PRIVATEKEY_TRASH}" ]] && return 2
 	
+	local private_key
+	local confirmation
+
 	[[ ! -z "${1}" ]] && private_key="${1}" || error "Please, set private key name"
 
 	if [[ -f "${LOCAL_PRIVATEKEY_STORAGE}/${private_key}" ]]; then
 
-		read -p "Delete '${private_key}' (y/n)? " -r confirmation
-		echo ""
+		if [[ "${FORCE_ACTOIN}" == "1" ]]; then
+			confirmation="y"
+		else
+			read -p "Delete '${private_key}' (y/n)? " -r confirmation
+			echo ""
+		fi
 
 		case "${confirmation}" in 
 			y|Y)
-				rm -v "${LOCAL_PRIVATEKEY_STORAGE}/${private_key}"
-				echo "Successfully removed ${private_key}"
+				rm "${LOCAL_PRIVATEKEY_STORAGE}/${private_key}"
+				echo "Successfully removed private key: ${private_key}"
 				;;
 
 			n|N)
@@ -326,11 +333,13 @@ remove_public_key() {
 	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
 	[[ -z "${LOCAL_PUBLICKEY_TRASH}" ]] && return 2
 	
+	local public_key
+
 	[[ ! -z "${1}" ]] && public_key="${1}" || error "Please, set public key name"
 	
 	if [[ -f "${LOCAL_PUBKEY_STORAGE}/${public_key}" ]]; then
-		rm -v "${LOCAL_PUBKEY_STORAGE}/${public_key}"
-		echo "Successfully removed ${public_key}"
+		rm "${LOCAL_PUBKEY_STORAGE}/${public_key}"
+		echo "Successfully removed public key: ${public_key}"
 	else
 		error "Can't locate private key: ${public_key}"
 	fi

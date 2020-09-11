@@ -25,12 +25,14 @@ Actions:
     -P|--import-privkey    Import private key for decryption
     -L|--list-keystorage   List imported keys
     -D|--set-default       Choose default private key to use
+    -R|--remove-key        Remove a key
 
 Options:
     -i|--input-filename    Input file for a selected action
     -s|--input-string      Input payload as a string
-    -a|--import-alias      Alias for imported payload
-    -k|--private-key       Private key file to use
+    -a|--key-alias         Alias of/for current key
+    -k|--private-key       Private key to use
+    -b|--public-key        Public key to use
     -r|--recipient         Recipient's public key name
 
 Auxiliary:
@@ -92,8 +94,15 @@ warning() {
 }
 
 init_rc() {
+
 	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && LOCAL_PUBKEY_STORAGE="${HOME}/.local/rsaenc/keys"
 	[[ ! -d "${LOCAL_PUBKEY_STORAGE}" ]] && mkdir -pv "${LOCAL_PUBKEY_STORAGE}"
+
+	[[ -z "${LOCAL_PRIVATEKEY_TRASH}" ]] && LOCAL_PRIVATEKEY_TRASH="${HOME}/.local/rsaenc/trash/private"
+	[[ ! -d "${LOCAL_PRIVATEKEY_TRASH}" ]] && mkdir -pv "${LOCAL_PRIVATEKEY_TRASH}"
+
+	[[ -z "${LOCAL_PUBLICKEY_TRASH}" ]] && LOCAL_PUBLICKEY_TRASH="${HOME}/.local/rsaenc/trash/public"
+	[[ ! -d "${LOCAL_PUBLICKEY_TRASH}" ]] && mkdir -pv "${LOCAL_PUBLICKEY_TRASH}"
 
 	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && LOCAL_PRIVATEKEY_STORAGE="${HOME}/.local/rsaenc/private"
 	[[ ! -d "${LOCAL_PRIVATEKEY_STORAGE}" ]] && mkdir -pv "${LOCAL_PRIVATEKEY_STORAGE}"
@@ -280,6 +289,53 @@ import_private_key() {
 
 }
 
+remove_private_key() {
+	
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
+	[[ -z "${LOCAL_PRIVATEKEY_TRASH}" ]] && return 2
+	
+	[[ ! -z "${1}" ]] && private_key="${1}" || error "Please, set private key name"
+
+	if [[ -f "${LOCAL_PRIVATEKEY_STORAGE}/${private_key}" ]]; then
+
+		read -p "Delete '${private_key}' (y/n)? " -r confirmation
+		echo ""
+
+		case "${confirmation}" in 
+			y|Y)
+				rm -v "${LOCAL_PRIVATEKEY_STORAGE}/${private_key}"
+				echo "Successfully removed ${private_key}"
+				;;
+
+			n|N)
+				echo "Nothing to do."
+				;;
+			* )
+				error "Invalid choice."
+				;;
+		esac
+
+	else
+		error "Can't locate private key: ${private_key}"
+	fi
+
+}
+
+remove_public_key() {
+	
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
+	[[ -z "${LOCAL_PUBLICKEY_TRASH}" ]] && return 2
+	
+	[[ ! -z "${1}" ]] && public_key="${1}" || error "Please, set public key name"
+	
+	if [[ -f "${LOCAL_PUBKEY_STORAGE}/${public_key}" ]]; then
+		rm -v "${LOCAL_PUBKEY_STORAGE}/${public_key}"
+		echo "Successfully removed ${public_key}"
+	else
+		error "Can't locate private key: ${public_key}"
+	fi
+}
+
 get_oldest_private_key(){
 
 	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
@@ -368,13 +424,15 @@ main() {
 	local CLI_INPUT_FILENAME
 	local CLI_INPUT_STRING
 	local CLI_PRIVATE_KEY
+	local CLI_PUBLIC_KEY
 	local CLI_ENCRYPT
 	local CLI_DECRYPT
 	local CLI_EXPORT_PUBKEY
+	local CLI_REMOVE_KEY
 	local CLI_SET_DEFAULT
 	local CLI_IMPORT_PUBKEY
 	local CLI_IMPORT_PRIVKEY
-	local CLI_IMPORT_ALIAS
+	local CLI_KEY_ALIAS
 	local CLI_LIST_KEYSTORAGE
 	local CLI_FORCE
 	local CLI_VERBOSE
@@ -395,6 +453,9 @@ main() {
 			-k|--private-key)
 				[[ -z "${CLI_PRIVATE_KEY}" ]] && CLI_PRIVATE_KEY="${2}" || error "Argument already set: -k"; shift; shift;;
 
+			-b|--public-key)
+				[[ -z "${CLI_PUBLIC_KEY}" ]] && CLI_PUBLIC_KEY="${2}" || error "Argument already set: -b"; shift; shift;;
+
 			-e|--encrypt)
 				[[ -z "${CLI_ENCRYPT}" ]] && CLI_ENCRYPT=1 || error "Parameter already set: -e"; shift;;
 
@@ -403,6 +464,9 @@ main() {
 
 			-E|--export-pubkey)
 				[[ -z "${CLI_EXPORT_PUBKEY}" ]] && CLI_EXPORT_PUBKEY=1 || error "Parameter already set: -E"; shift;;
+
+			-R|--remove-key)
+				[[ -z "${CLI_REMOVE_KEY}" ]] && CLI_REMOVE_KEY=1 || error "Parameter already set: -R"; shift;;
 
 			-D|--set-default)
 				[[ -z "${CLI_SET_DEFAULT}" ]] && CLI_SET_DEFAULT=1 || error "Parameter already set: -D"; shift;;
@@ -413,8 +477,8 @@ main() {
 			-P|--import-privkey)
 				[[ -z "${CLI_IMPORT_PRIVKEY}" ]] && CLI_IMPORT_PRIVKEY=1 || error "Parameter already set: -P"; shift;;
 
-			-a|--import-alias)
-				[[ -z "${CLI_IMPORT_ALIAS}" ]] && CLI_IMPORT_ALIAS="${2}" || error "Argument already set: -a"; shift; shift;;
+			-a|--key-alias)
+				[[ -z "${CLI_KEY_ALIAS}" ]] && CLI_KEY_ALIAS="${2}" || error "Argument already set: -a"; shift; shift;;
 
 			-L|--list-keystorage)
 				[[ -z "${CLI_LIST_KEYSTORAGE}" ]] && CLI_LIST_KEYSTORAGE=1 || error "Parameter already set: -L"; shift;;
@@ -467,12 +531,28 @@ main() {
 			error "You only can use one: input file or input string"
 
 		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
-			debug "Importing public key from file ${CLI_INPUT_FILENAME} (alias '${CLI_IMPORT_ALIAS}')"
-			import_pubkey "${CLI_INPUT_FILENAME}" "file" "${CLI_IMPORT_ALIAS}"
+			debug "Importing public key from file ${CLI_INPUT_FILENAME} (alias '${CLI_KEY_ALIAS}')"
+			import_pubkey "${CLI_INPUT_FILENAME}" "file" "${CLI_KEY_ALIAS}"
 
 		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
-			debug "Importing public key from string (alias '${CLI_IMPORT_ALIAS}')"
-			import_pubkey "${CLI_INPUT_STRING}" "string" "${CLI_IMPORT_ALIAS}"
+			debug "Importing public key from string (alias '${CLI_KEY_ALIAS}')"
+			import_pubkey "${CLI_INPUT_STRING}" "string" "${CLI_KEY_ALIAS}"
+
+		fi
+	fi
+
+	if [[ "${CLI_DECRYPT}" == "1" ]]; then
+
+		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			error "You only can use one: input file or input string"
+
+		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
+			debug "Importing public key from file ${CLI_INPUT_FILENAME} (alias '${CLI_KEY_ALIAS}')"
+			import_pubkey "${CLI_INPUT_FILENAME}" "file" "${CLI_KEY_ALIAS}"
+
+		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+			debug "Importing public key from string (alias '${CLI_KEY_ALIAS}')"
+			import_pubkey "${CLI_INPUT_STRING}" "string" "${CLI_KEY_ALIAS}"
 
 		fi
 	fi
@@ -495,16 +575,16 @@ main() {
 		fi
 	fi
 
-	if [[ "${CLI_DECRYPT}" == "1" ]]; then
+	if [[ "${CLI_REMOVE_KEY}" == "1" ]]; then
 
-		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
-			error "You only can use one: input file or input string"
+		if [[ ! -z "${CLI_PUBLIC_KEY}" ]] && [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
+			error "You only can use one: private key or public key"
 
-		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
-			decrypt_content "${CLI_INPUT_FILENAME}" "file"
+		elif [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
+			remove_private_key "${CLI_PRIVATE_KEY}"
 
-		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
-			decrypt_content "${CLI_INPUT_STRING}" "string"
+		elif [[ ! -z "${CLI_PUBLIC_KEY}" ]]; then
+			remove_public_key "${CLI_PUBLIC_KEY}"
 
 		fi
 	fi

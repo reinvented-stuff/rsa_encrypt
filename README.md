@@ -167,6 +167,29 @@ PRIVATE KEYS:
 DEFAULT: id_rsa.pem
 ```
 
+## Remove a key from key storage
+
+You might want to remove some public or private keys from the internal key storage. 
+
+Remove a public key:
+```
+$ rsaenc -R -b id_rsa_2048.pub.pem
+Successfully removed public key: id_rsa_2048.pub.pem
+```
+
+Remove a private key:
+```
+$ rsaenc -R -k id_rsa_1024.pem
+Delete 'id_rsa_1024.pem' (y/n)? y
+Successfully removed private key: id_rsa_1024.pem
+```
+
+Remove a private key, auto confirmation:
+```
+$ rsaenc -R -f -k id_rsa_1024.pem
+Successfully removed private key: id_rsa_1024.pem
+```
+
 ## Encrypt a message
 
 Message encryption works in the same manner as public key import. Pick what is best for you and either encrypt a file contents, or a plaintext string.
@@ -289,27 +312,30 @@ fail
 # Usage
 
 ```
-Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L] [-r keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
+Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D|-R] [-r keyname] [-b keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
-    -e|--encrypt             Encrypt payload
-    -d|--decrypt             Decrypt payload
-    -E|--export-pubkey       Export your public key in a PEM format
-    -I|--import-pubkey       Import public key of a recipient
-    -P|--import-privkey      Import private key for decryption
-    -L|--list-keystorage     List imported keys
+    -e|--encrypt           Encrypt payload
+    -d|--decrypt           Decrypt payload
+    -E|--export-pubkey     Export your public key in a PEM format
+    -I|--import-pubkey     Import public key of a recipient
+    -P|--import-privkey    Import private key for decryption
+    -L|--list-keystorage   List imported keys
+    -D|--set-default       Choose default private key to use
+    -R|--remove-key        Remove a key
 
 Options:
-    -i|--input-filename      Input file for a selected action
-    -s|--input-string        Input payload as a string
-    -a|--import-alias        Alias for imported payload
-    -k|--private-key         Private key file to use
-    -r|--recipient           Recipient's public key name
+    -i|--input-filename    Input file for a selected action
+    -s|--input-string      Input payload as a string
+    -a|--key-alias         Alias of/for current key
+    -k|--private-key       Private key to use
+    -b|--public-key        Public key to use
+    -r|--recipient         Recipient's public key name
 
 Auxiliary:
-    -f|--force               Force selected action
-    -v|--verbose             Enable debug output
-    -h|--help                Enable debug output
+    -f|--force             Force selected action
+    -v|--verbose           Enable debug output
+    -h|--help              Show help
 
 ```
 

@@ -404,18 +404,10 @@ Auxiliary:
 
 # Quick start
 
-## On the very start
+## Initialise environmet
 
-Nothing is imported on the first start. You'll need to import someone else's RSA Public Key to encrypt messages for them and/or your RSA Private Key so you could decrypt data sent to you by someone else.
-
-```
-$ ./rsaenc -L
-PUBLIC KEYS:
-
-PRIVATE KEYS:
-
-DEFAULT: 
-```
+1. Make sure you have a private key for decryption 
+2. Make sure you have a public key for encryption
 
 ## Start encrypting for someone else
 

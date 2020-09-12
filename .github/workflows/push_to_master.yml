@@ -228,3 +228,23 @@ jobs:
         asset_path: ${{ steps.verify_deb_package.outputs.path_to_deb_file }}
         asset_name: ${{ steps.verify_deb_package.outputs.deb_filename }}
         asset_content_type: application/octet-stream
+
+    - name: Upload RPM package to repository
+      id: upload_rpm_to_repository
+      run: |
+        export RSYNC_PASSWORD="${{ secrets.RSYNC_PASSWORD }}"
+        rsync \
+          -raz -vv \
+          --port "${{ secrets.RSYNC_PORT }}" \
+          "${{steps.verify_rpm_package.outputs.path_to_rpm_file}}" \
+          ${{ secrets.RSYNC_USERNAME }}@${{ secrets.RSYNC_HOSTNAME }}::${{ secrets.RSYNC_PATH_RPM_EL7 }}
+
+    - name: Upload DEB package to repository
+      id: upload_deb_to_repository
+      run: |
+        export RSYNC_PASSWORD="${{ secrets.RSYNC_PASSWORD }}"
+        rsync \
+          -raz -vv \
+          --port "${{ secrets.RSYNC_PORT }}" \
+          "${{steps.verify_deb_package.outputs.path_to_deb_file}}" \
+          ${{ secrets.RSYNC_USERNAME }}@${{ secrets.RSYNC_HOSTNAME }}::${{ secrets.RSYNC_PATH_DEB }}

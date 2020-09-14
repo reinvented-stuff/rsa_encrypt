@@ -15,12 +15,12 @@ usage() {
 	cat << EOF
 RSA encryption/decryption tool
 Version: ${VERSION}
-Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-r keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
+Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt           Encrypt payload
     -d|--decrypt           Decrypt payload
-    -E|--export-pubkey     Export your public key in a PEM format
+    -E|--export-key        Export public key or public part
     -I|--import-pubkey     Import public key of a recipient
     -P|--import-privkey    Import private key for decryption
     -L|--list-keystorage   List imported keys
@@ -114,25 +114,35 @@ init_rc() {
 
 }
 
-
 export_pubkey() {
 
-	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && return 2
+	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
+	[[ -z "${LOCAL_PUBKEY_STORAGE}" ]] && return 2
 
-	local tmp_pubkey_filename
-	local pem_pubkey_filename
+	local key_name
+	local key_type
 
-	tmp_pubkey_filename="$(mktemp)"
-	pem_pubkey_filename="${LOCAL_PUBKEY_STORAGE}/${LOCAL_PUBKEY_FILENAME##*/}.pem"
+	[[ ! -z "${1}" ]] && key_name="${1}" || error "Please, set the key name"
+	[[ ! -z "${2}" ]] && key_type="${2}" || error "Please, set the key type"
 
-	[[ ! -f "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}" ]] && error "No private keys found to export."
 
-	echo "Exporting private key: ${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}"
-	echo "ssh-rsa:"
-	ssh-keygen -f "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}" -y
+	if [[ "${key_type}" == "public" ]]; then
+		
+		[[ ! -f "${LOCAL_PUBKEY_STORAGE}/${key_name}" ]] && error "No public keys found to export: '${key_name}'"
 
-	echo "rsa:"
-	openssl rsa -RSAPublicKey_in -pubout -in <(ssh-keygen -f "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}" -e -m pem) 2>/dev/null
+		echo "Exporting public key: ${key_name}"
+		ssh-keygen -i -i -mPKCS8 -f "${LOCAL_PUBKEY_STORAGE}/${key_name}"
+	
+	elif [[ "${key_type}" == "private" ]]; then
+
+		[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/${key_name}" ]] && error "No private keys found to export: '${key_name}'"
+
+		echo "Exporting private key: ${key_name}"
+		ssh-keygen -f "${LOCAL_PRIVATEKEY_STORAGE}/${key_name}" -y
+	
+	else
+		error "Unsupported key type: '${key_type}'"
+	fi
 
 }
 
@@ -247,7 +257,6 @@ import_pubkey() {
 	rm "${tmp_pubkey_filename}"
 
 	echo "Saved as '${pem_pubkey_basename}'"
-	cat "${pem_pubkey_filename}"
 
 }
 
@@ -259,6 +268,7 @@ import_private_key() {
 	local private_key_alias
 	local private_key_basename
 	local pem_privatekey_filename
+	local default_private_key
 	
 	[[ ! -z "${1}" ]] && private_key_filename="${1}" || error "Please, set the input source with a public key"
 	[[ ! -z "${2}" ]] && private_key_alias="${2}"
@@ -277,7 +287,7 @@ import_private_key() {
 	fi
 
 	cp "${private_key_filename}" "${pem_privatekey_filename}"
-	ssh-keygen -p -N "" -m PEM -f "${pem_privatekey_filename}"
+	ssh-keygen -p -m PEM -f "${pem_privatekey_filename}"
 
 	echo "Saved as '${pem_privatekey_filename}'"
 
@@ -357,6 +367,8 @@ get_default_private_key() {
 	
 	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
 
+	local default_private_key
+
 	[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/.default" ]] && touch "${LOCAL_PRIVATEKEY_STORAGE}/.default"
 	default_private_key=$(cat "${LOCAL_PRIVATEKEY_STORAGE}/.default")
 	
@@ -393,6 +405,8 @@ set_default_private_key() {
 
 	[[ -z "${LOCAL_PRIVATEKEY_STORAGE}" ]] && return 2
 
+	local private_key_filename
+
 	[[ ! -z "${1}" ]] && private_key_filename="${1}" || error "Please, set the input source with a private key"
 
 	[[ ! -f "${LOCAL_PRIVATEKEY_STORAGE}/${private_key_filename}" ]] && error "Private key not found: '${private_key_filename}'"
@@ -410,6 +424,8 @@ list_keystorage() {
 	[[ ! -d "${LOCAL_PUBKEY_STORAGE}" ]] && error "Please, make sure your key storage is initialised: ${LOCAL_PUBKEY_STORAGE}"
 	[[ ! -d "${LOCAL_PRIVATEKEY_STORAGE}" ]] && error "Please, make sure your key storage is initialised: ${LOCAL_PRIVATEKEY_STORAGE}"
 	
+	local default_private_key
+
 	default_private_key=$( get_default_private_key )
 
 	echo "PUBLIC KEYS:"
@@ -518,8 +534,17 @@ main() {
 	fi
 
 	if [[ "${CLI_EXPORT_PUBKEY}" == "1" ]]; then
-		debug "Exporting your public key"
-		export_pubkey
+
+		if [[ ! -z "${CLI_PUBLIC_KEY}" ]] && [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
+			error "You only can use one: private key or public key"
+
+		elif [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
+			export_pubkey "${CLI_PRIVATE_KEY}" "private"
+
+		elif [[ ! -z "${CLI_PUBLIC_KEY}" ]]; then
+			export_pubkey "${CLI_PUBLIC_KEY}" "public"
+		fi
+
 	fi
 
 	if [[ "${CLI_IMPORT_PRIVKEY}" == "1" ]]; then
@@ -557,11 +582,11 @@ main() {
 
 		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
 			debug "Importing public key from file ${CLI_INPUT_FILENAME} (alias '${CLI_KEY_ALIAS}')"
-			import_pubkey "${CLI_INPUT_FILENAME}" "file" "${CLI_KEY_ALIAS}"
+			decrypt_content "${CLI_INPUT_FILENAME}" "file" "${CLI_KEY_ALIAS}"
 
 		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
 			debug "Importing public key from string (alias '${CLI_KEY_ALIAS}')"
-			import_pubkey "${CLI_INPUT_STRING}" "string" "${CLI_KEY_ALIAS}"
+			decrypt_content "${CLI_INPUT_STRING}" "string" "${CLI_KEY_ALIAS}"
 
 		fi
 	fi
@@ -601,4 +626,7 @@ main() {
 }
 
 init_rc
+( set -o posix ; set ) | sort > .before
 main "$@"
+( set -o posix ; set ) | sort > .after
+diff -u .before .after

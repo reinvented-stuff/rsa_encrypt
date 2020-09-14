@@ -269,6 +269,7 @@ import_private_key() {
 	local private_key_basename
 	local pem_privatekey_filename
 	local default_private_key
+	local new_passphrase_param
 	
 	[[ ! -z "${1}" ]] && private_key_filename="${1}" || error "Please, set the input source with a public key"
 	[[ ! -z "${2}" ]] && private_key_alias="${2}"
@@ -286,8 +287,14 @@ import_private_key() {
 		error "Private key already exists: ${pem_privatekey_filename}"
 	fi
 
+	if ssh-keygen -P "" -yf "${private_key_filename}" > /dev/null 2>&1; then
+		new_passphrase_param=( "-N" "")
+	else
+		new_passphrase_param=( )
+	fi
+
 	cp "${private_key_filename}" "${pem_privatekey_filename}"
-	ssh-keygen -p -m PEM -f "${pem_privatekey_filename}"
+	ssh-keygen "${new_passphrase_param[@]}" -p -m PEM -f "${pem_privatekey_filename}"
 
 	echo "Saved as '${pem_privatekey_filename}'"
 

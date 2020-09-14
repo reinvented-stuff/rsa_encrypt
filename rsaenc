@@ -626,7 +626,4 @@ main() {
 }
 
 init_rc
-( set -o posix ; set ) | sort > .before
 main "$@"
-( set -o posix ; set ) | sort > .after
-diff -u .before .after

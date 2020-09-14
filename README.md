@@ -18,7 +18,7 @@ Helps you to encrypt data using someone else's public SSH RSA key and decrypting
 ## Start encrypting for someone else
 
 1. Import recipient's public key
-2. Veryfy imported key
+2. Verify imported key
 3. Encrypt data
 4. Pass encrypted blob to the recipient
 
@@ -309,7 +309,7 @@ ssh root password: VHo&EdY%thjEGq6C
 
 ## Default private key
 
-You can choose your default private key in order to save time on puching in a decryption command. If you have a primary private key you use most of the time, use `-D -k your_private_key.pem` parameters to manipulate default private key.
+You can choose your default private key in order to save time on punching in a decryption command. If you have a primary private key you use most of the time, use `-D -k your_private_key.pem` parameters to manipulate default private key.
 
 The first imported private key will be set as default.
 

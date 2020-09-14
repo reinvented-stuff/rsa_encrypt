@@ -6,8 +6,11 @@ TARGZ_FILENAME = $(PROGNAME)-$(VERSION).tar.gz
 TARGZ_CONTENTS = rsaenc README.md Makefile .version
 
 PREFIX = /opt/rsaenc
+PWD = $(shell pwd)
 
-.PHONY: all version build clean install
+export PROGROOT=$(PWD)/$(PROGNAME_VERSION)
+
+.PHONY: all version build clean install test
 
 $(TARGZ_FILENAME):
 	tar -zvcf "$(TARGZ_FILENAME)" "$(PROGNAME_VERSION)"
@@ -26,6 +29,18 @@ version:
 clean:
 	rm -vfr "$(PROGNAME_VERSION)"
 	rm -vf "$(TARGZ_FILENAME)"
+
+test:
+	./.test/10_list_keys.sh
+	./.test/20_generate_keypairs.sh
+	./.test/30_import_private_keys.sh
+	./.test/40_import_public_keys.sh
+	./.test/50_encrypt_message.sh
+	./.test/60_decrypt_message.sh
+	./.test/70_delete_private_keys.sh
+	./.test/80_delete_public_keys.sh
+	./.test/9000_cleanup.sh
+	rm -v .artifacts
 
 install:
 	install -d $(DESTDIR)/usr/share/doc/$(PROGNAME_VERSION)

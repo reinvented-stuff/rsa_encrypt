@@ -136,7 +136,7 @@ jobs:
         mv -v /home/runner/debbuild/DEBIAN/control.tpl /home/runner/debbuild/DEBIAN/control
         
         cp -v "rsaenc-${version}/rsaenc" /home/runner/debbuild/usr/bin/
-        cp -v "rsaenc-${version}/README.md" /home/runner/debbuild/usr/share/doc/
+        cp -v "rsaenc-${version}/README.md" "/home/runner/debbuild/usr/share/doc/rsaenc-${version}"
 
         sed -i"" \
           -e "s/__VERSION__/${version}/" \

@@ -187,6 +187,14 @@ In order to be able to decrypt messages, you need to import your ssh-rsa private
 $ rsaenc -P -i ~/.ssh/id_rsa
 ```
 
+## Export public part of your private key
+
+After importing your private key, you can export your private key, so people could encrypt data for you.
+
+```
+$ rsaenc -E -k id_rsa.pem
+```
+
 ## Import someone else's public key from file
 
 You can add recipient's ssh-rsa public key so you could use short descriptive name on the encrypting stage. For both, files and strings you can set an alias, so you could pick a better name for further usage.
@@ -349,38 +357,46 @@ DEFAULT: id_rsa_1024.pem
 Message length limit depends on your private key. There are some research results:
 
 ```
-$ ./rsaenc -e -s "${CONTENT_OF_117_CHARS}" -r id_rsa_1024.pem
+$ ./rsaenc -e -i "${FILE_OF_117_CHARS}" -r id_rsa_1024.pem
 ok
 
-$ ./rsaenc -e -s "${CONTENT_OF_118_CHARS}" -r id_rsa_1024.pem
+$ ./rsaenc -e -i "${FILE_OF_118_CHARS}" -r id_rsa_1024.pem
 fail
 ```
 
 ```
-bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_245_CHARS}" -r id_rsa_2048.pem
+$ ./rsaenc -e -i "${FILE_OF_245_CHARS}" -r id_rsa_2048.pem
 ok
 
-bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_246_CHARS}" -r id_rsa_2048.pem
+$ ./rsaenc -e -i "${FILE_OF_246_CHARS}" -r id_rsa_2048.pem
 fail
 ```
 
 ```
-bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_501_CHARS}" -r id_rsa_4096.pem
+$ ./rsaenc -e -i "${FILE_OF_501_CHARS}" -r id_rsa_4096.pem
 ok
 
-bash-3.2$ ./rsaenc -e -s "${CONTENT_OF_502_CHARS}" -r id_rsa_4096.pem
+$ ./rsaenc -e -i "${FILE_OF_502_CHARS}" -r id_rsa_4096.pem
+fail
+```
+
+```
+$ ./rsaenc -e -i "${FILE_OF_2036_CHARS}" -r id_rsa_16384.pub.pem
+ok
+
+$ ./rsaenc -e -i "${FILE_OF_2037_CHARS}" -r id_rsa_16384.pub.pem
 fail
 ```
 
 # Usage
 
 ```
-Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D|-R] [-r keyname] [-b keyname] [-k keyname] [-i filename] [-s payload] [-a alias]
+Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt           Encrypt payload
     -d|--decrypt           Decrypt payload
-    -E|--export-pubkey     Export your public key in a PEM format
+    -E|--export-key        Export public key or public part
     -I|--import-pubkey     Import public key of a recipient
     -P|--import-privkey    Import private key for decryption
     -L|--list-keystorage   List imported keys

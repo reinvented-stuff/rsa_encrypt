@@ -3,13 +3,18 @@ RSA encrypt/decrypt tool
 
 Helps you to encrypt data using someone else's public SSH RSA key and decrypting messages using your private SSH RSA key.
 
-# Releases
+![Yum uptime](https://badgen.net/uptime-robot/day/m785957851-bb8ca11ed2ffc9bdb53cea12)
+![Apt uptime](https://badgen.net/uptime-robot/day/m785957854-9bc3e2915712caca819fe768)
+![Latest release](https://badgen.net/github/release/reinvented-stuff/rsa_encrypt)
 
-rsaenc — [Download](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc)
 
 # Installation
 
 There are several options of how to install the software.
+
+## Manual download
+
+Latest `rsaenc` — [Download](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc)
 
 ## Install on RHEL/CentOS 8
 

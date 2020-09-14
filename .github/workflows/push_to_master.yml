@@ -194,7 +194,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{steps.readversionfile.outputs.desiredversion}}
-        release_name: Release ${{steps.readversionfile.outputs.desiredversion}}
+        release_name: v${{steps.readversionfile.outputs.desiredversion}}
         body_path: ${{steps.generate_changelog.outputs.release_changelog_filename}}
         draft: false
         prerelease: false

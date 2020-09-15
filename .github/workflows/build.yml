@@ -45,7 +45,7 @@ jobs:
       run: |
         URL="https://api.github.com/repos/${{github.repository}}/git/refs/tags/${{steps.readversionfile.outputs.desiredversion}}"
         OUTFILE=".tag_hash"
-        curl -s -o "${OUTFILE}" -X GET -H 'authorization: Bearer ${{secrets.GITHUB_TOKEN}}' --url "${URL}" | jq .object.sha
+        curl -s -X GET -H 'authorization: Bearer ${{secrets.GITHUB_TOKEN}}' --url "${URL}" | jq .object.sha | tee "${OUTFILE}"
         echo "::set-output name=tag_hash::$(cat "${OUTFILE}")"
     
     - name: Check if planned tag doesn't exist yet

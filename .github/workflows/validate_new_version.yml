@@ -15,7 +15,7 @@ jobs:
     outputs:
       planned_version: ${{ steps.planned_version.outputs.planned_version }}
       tag_hash: ${{ steps.tag_exists.outputs.tag_exists }}
-      can_build: ${{ steps.can_create.outputs.can_create }}
+      can_create: ${{ steps.can_create.outputs.can_create }}
       job_status: ${{ job.status }}
 
     steps:

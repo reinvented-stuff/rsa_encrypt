@@ -110,6 +110,9 @@ jobs:
     needs: 
       - validate_new_version
 
+    if: >
+      github.event_name == 'push'
+
     env:
       PLANNED_VERSION: ${{ needs.validate_new_version.outputs.planned_version }}
 

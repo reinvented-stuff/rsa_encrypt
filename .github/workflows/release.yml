@@ -287,8 +287,8 @@ jobs:
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.readversionfile.outputs.desiredversion}}
-          release_name: v${{steps.readversionfile.outputs.desiredversion}}
+          tag_name: ${{env.PLANNED_VERSION}}
+          release_name: v${{env.PLANNED_VERSION}}
           body_path: ${{steps.generate_changelog.outputs.release_changelog_filename}}
           draft: false
           prerelease: false

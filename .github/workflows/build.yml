@@ -31,7 +31,7 @@ jobs:
         fi
 
     - name: Read out .version file
-      if: steps.version_file_exists.outputs.version_file_exists == "true"
+      if: steps.version_file_exists.outputs.version_file_exists == 'true'
       id: planned_version
       run: echo "::set-output name=planned_version::$(cat .version)"
 
@@ -50,20 +50,20 @@ jobs:
     
     - name: Check if planned tag doesn't exist yet
       id: tag_exists
-      if: steps.lookup_tag.outputs.tag_hash == "null"
+      if: steps.lookup_tag.outputs.tag_hash == 'null'
       run: |
         echo "::set-output name=tag_exists::false"
 
     - name: Define if can create a new version
       id: can_create
-      if: steps.tag_exists.outputs.tag_exists == "false"
+      if: steps.tag_exists.outputs.tag_exists == 'false'
       run: |
         echo "::set-output name=can_create::true"
 
   build:
     name: Build, Test, Packages
     runs-on: ubuntu-latest
-    if: needs.validate_new_version.outputs.can_create == "true"
+    if: needs.validate_new_version.outputs.can_create == 'true'
     
     env:
       PLANNED_VERSION=${{ needs.validate_new_version.outputs.planned_version }}
@@ -80,7 +80,7 @@ jobs:
 
     - name: Generate changelog
       id: generate_changelog
-      if: steps.tag_exists.outputs.tag_exists == "false"
+      if: steps.tag_exists.outputs.tag_exists == 'false'
       shell: bash
       run: |
         described=$(git describe --tags || git rev-list --max-parents=0 HEAD)

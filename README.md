@@ -3,13 +3,41 @@ RSA encrypt/decrypt tool
 
 Helps you to encrypt data using someone else's public SSH RSA key and decrypting messages using your private SSH RSA key.
 
-# Releases
+[![Yum uptime](https://badgen.net/uptime-robot/day/m785957851-bb8ca11ed2ffc9bdb53cea12)](http://uptime.reinvented-stuff.com)
+[![Apt uptime](https://badgen.net/uptime-robot/day/m785957854-9bc3e2915712caca819fe768)](http://uptime.reinvented-stuff.com)
+[![Latest release](https://badgen.net/github/release/reinvented-stuff/rsa_encrypt)](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/)
 
-rsaenc — [Download](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc)
+
+# Quick start
+
+## Initialise environment
+
+1. Make sure you have a private key for decryption 
+2. Make sure you have a public key for encryption
+
+## Start encrypting for someone else
+
+1. Import recipient's public key
+2. Verify imported key
+3. Encrypt data
+4. Pass encrypted blob to the recipient
+
+## Start receiving encrypted data
+
+1. Import your private key
+2. Verify imported key
+3. Export your public key
+4. Pass your public key to the sender
+5. Decrypt encrypted data received from the sender
+
 
 # Installation
 
 There are several options of how to install the software.
+
+## Manual download
+
+Latest `rsaenc` — [Download](https://github.com/reinvented-stuff/rsa_encrypt/releases/latest/download/rsaenc)
 
 ## Install on RHEL/CentOS 8
 
@@ -21,74 +49,35 @@ Yum repository URL: [https://yum.reinvented-stuff.com/rhel/7/](https://yum.reinv
 Yum configuration: [reinvented-stuff.repo](https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo)  
 GPG Public Key: [RPM-GPG-KEY-RNVSTFF-7](https://yum.reinvented-stuff.com/rhel/7/RPM-GPG-KEY-RNVSTFF-7)  
 
-### Add Reinvented Stuff's Yum repository
+### Add our yum repository to your system
 
 In order to use our repository, you can use `yum-config-manager` tool to fetch .repo file from our server and include it to the local Yum configuration. The repository will become available right away.
 
 Alternatively you can manually download and copy `reinvented-stuff.repo` file into `/etc/yum.repos.d` on your server.
 
-<details>
-    <summary>Adding Reinvented Stuff Yum repository</summary>
-
-```
+```bash
+$ sudo yum install yum-utils
 $ sudo yum-config-manager --add-repo https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo
-Loaded plugins: fastestmirror
-adding repo from: https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo
-grabbing file https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo to /etc/yum.repos.d/reinvented-stuff.repo
-repo saved to /etc/yum.repos.d/reinvented-stuff.repo
 ```
 
-</details>
+or:
+
+```bash
+$ curl -fsS "https://yum.reinvented-stuff.com/rhel/7/reinvented-stuff.repo" | sudo tee /etc/yum.repos.d/reinvented-stuff.repo
+```
+
+### Import our GPG Key so yum could verify the packages authenticity
+
+```bash
+$ sudo rpm --import "https://yum.reinvented-stuff.com/rhel/7/RPM-GPG-KEY-RNVSTFF-7"
+```
 
 ### Install package using yum
 
-
-<details>
-    <summary>Installing package</summary>
-
-```
+```bash
 $ sudo yum install rsaenc
-Loaded plugins: fastestmirror
-Loading mirror speeds from cached hostfile
- * base: mirror.nodesdirect.com
- * epel: reflector.westga.edu
- * extras: mirror.team-cymru.com
- * updates: mirror.ash.fastserv.com
-Resolving Dependencies
---> Running transaction check
----> Package rsaenc.x86_64 0:1.0.7-1 will be installed
---> Finished Dependency Resolution
-
-Dependencies Resolved
-
-=======================================================================================
- Package          Arch             Version            Repository                  Size
-=======================================================================================
-Installing:
- rsaenc           x86_64           1.0.7-1            reinvented-stuff            13 k
-
-Transaction Summary
-=======================================================================================
-Install  1 Package
-
-Total download size: 13 k
-Installed size: 23 k
-Is this ok [y/d/N]: y
-Downloading packages:
-rsaenc-1.0.7-1.x86_64.rpm                                       |  13 kB  00:00:00     
-Running transaction check
-Running transaction test
-Transaction test succeeded
-Running transaction
-  Installing : rsaenc-1.0.7-1.x86_64                                               1/1 
-  Verifying  : rsaenc-1.0.7-1.x86_64                                               1/1 
-
-Installed:
-  rsaenc.x86_64 0:1.0.7-1                                                              
-
-Complete!
 ```
-</details>
+
 
 ## Install on Debian/Ubuntu
 
@@ -320,7 +309,7 @@ ssh root password: VHo&EdY%thjEGq6C
 
 ## Default private key
 
-You can choose your default private key in order to save time on puching in a decryption command. If you have a primary private key you use most of the time, use `-D -k your_private_key.pem` parameters to manipulate default private key.
+You can choose your default private key in order to save time on punching in a decryption command. If you have a primary private key you use most of the time, use `-D -k your_private_key.pem` parameters to manipulate default private key.
 
 The first imported private key will be set as default.
 
@@ -417,25 +406,3 @@ Auxiliary:
     -h|--help              Show help
 
 ```
-
-# Quick start
-
-## Initialise environmet
-
-1. Make sure you have a private key for decryption 
-2. Make sure you have a public key for encryption
-
-## Start encrypting for someone else
-
-1. Import recipient's public key
-2. Veryfy imported key
-3. Encrypt data
-4. Pass encrypted blob to the recipient
-
-## Start receiving encrypted data
-
-1. Import your private key
-2. Verify imported key
-3. Export your public key
-4. Pass your public key to the sender
-5. Decrypt encrypted data received from the sender

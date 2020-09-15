@@ -2,15 +2,19 @@ name: Release
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master ]
 
 jobs:
 
   build:
     name: Build, Test, Packages
     runs-on: ubuntu-latest
+
+    outputs:
+      job_status: ${{ job.status }}
+   
     if: needs.validate_new_version.outputs.can_create == 'true'
-    
+
     env:
       PLANNED_VERSION=${{ needs.validate_new_version.outputs.planned_version }}
 

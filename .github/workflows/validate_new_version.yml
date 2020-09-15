@@ -4,9 +4,6 @@ on:
   push:
     branches: [ '*' ]
 
-  pull_request:
-    branches: [ master ]
-
 jobs:
 
   validate_new_version:
@@ -17,6 +14,8 @@ jobs:
       tag_hash: ${{ steps.tag_exists.outputs.tag_exists }}
       can_create: ${{ steps.can_create.outputs.can_create }}
       job_status: ${{ job.status }}
+
+    continue-on-error: true
 
     steps:
 

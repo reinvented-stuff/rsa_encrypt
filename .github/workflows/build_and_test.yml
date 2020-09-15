@@ -4,13 +4,10 @@ on:
   push:
     branches: [ '*', '!master' ]
 
-  pull_request:
-    branches: [ master ]
-
 jobs:
 
   build_and_test:
-    name: Test branch
+    name: Build, Test
     runs-on: ubuntu-latest
     outputs:
       job_status: ${{ job.status }}

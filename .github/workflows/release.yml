@@ -6,14 +6,15 @@ on:
 
 jobs:
 
-  build:
+  release:
     name: Build, Test, Packages
     runs-on: ubuntu-latest
 
     outputs:
       job_status: ${{ job.status }}
    
-    if: needs.validate_new_version.outputs.can_create == 'true'
+    needs: 
+      - validate_new_version
 
     env:
       PLANNED_VERSION=${{ needs.validate_new_version.outputs.planned_version }}

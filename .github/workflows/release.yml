@@ -30,7 +30,7 @@ jobs:
         id: get_branch_name
         shell: bash
         run: |
-          echo "::set-output name=branch_name:: ${GITHUB_REF#refs/heads/}"
+          echo "::set-output name=branch_name::${GITHUB_REF#refs/heads/}"
 
       - name: Check if .version file exists
         id: version_file_exists

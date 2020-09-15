@@ -267,7 +267,7 @@ jobs:
           curl --request POST --url https://api.github.com/repos/${{ github.repository }}/git/tags \
           -H 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
           -H 'content-type: application/json' \
-          --data '{"tag": "${{steps.readversionfile.outputs.desiredversion}}",
+          --data '{"tag": "${env.PLANNED_VERSION}",
             "message": "Pipeline build tag",
             "object": "${{ github.sha }}",
             "type": "commit",
@@ -303,7 +303,7 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rsaenc-${{ steps.readversionfile.outputs.desiredversion }}/rsaenc
+          asset_path: ./rsaenc-${{env.PLANNED_VERSION}}/rsaenc
           asset_name: rsaenc
           asset_content_type: application/octet-stream
 

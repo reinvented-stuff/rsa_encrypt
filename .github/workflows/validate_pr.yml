@@ -21,8 +21,8 @@ jobs:
         [[ "${{needs.validate_new_version.outputs.can_create}}" == "true" ]] && : || exit 2 
 
 
-    - name: Check if can create a new version
-      id: if_can_create
+    - name: Check if build and test passed successfully
+      id: if_built_and_tested
       run: |
         [[ "${{needs.build_and_test.outputs.job_status}}" == "Success" ]] && : || exit 2 
 

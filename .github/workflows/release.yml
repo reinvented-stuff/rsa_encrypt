@@ -109,7 +109,7 @@ jobs:
       - validate_new_version
 
     env:
-      PLANNED_VERSION=${{ needs.validate_new_version.outputs.planned_version }}
+      PLANNED_VERSION: ${{ needs.validate_new_version.outputs.planned_version }}
 
     steps:
 

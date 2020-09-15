@@ -19,9 +19,9 @@ jobs:
     - name: Check if can create a new version
       needs:
          - validate_new_version
-
+      run: echo "Passed"
 
     - name: Check if build and test passed successfully
       needs:
          - build_and_test
-
+      run: echo "Passed"

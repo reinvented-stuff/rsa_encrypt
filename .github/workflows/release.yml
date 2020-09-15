@@ -11,12 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       planned_version: ${{ steps.planned_version.outputs.planned_version }}
-      tag_hash: ${{ steps.tag_exists.outputs.tag_exists }}
+      tag_hash: ${{ steps.lookup_tag.outputs.tag_hash }}
       can_create: ${{ steps.can_create.outputs.can_create }}
+      tag_exists: ${{ steps.can_create.outputs.tag_exists }}
       branch_name: ${{ steps.get_branch_name.outputs.branch_name }}
       job_status: ${{ job.status }}
-
-    continue-on-error: true
 
     steps:
 
@@ -58,18 +57,19 @@ jobs:
           curl -s -X GET -H 'authorization: Bearer ${{secrets.GITHUB_TOKEN}}' --url "${URL}" | jq .object.sha | tee "${OUTFILE}"
           echo "::set-output name=tag_hash::$(cat "${OUTFILE}")"
       
-      - name: Check if planned tag doesn't exist yet
-        id: tag_exists
+      - name: Define if can create a new version
+        id: can_create
         if: steps.lookup_tag.outputs.tag_hash == 'null'
         run: |
           echo "::set-output name=tag_exists::false"
-
-      - name: Define if can create a new version
-        id: can_create
-        if: steps.tag_exists.outputs.tag_exists == 'false'
-        run: |
           echo "::set-output name=can_create::true"
 
+      - name: Fail on pull request if version already exists
+        id: fail_on_master
+        if: >
+          github.event_name == 'pull_request' && 
+          steps.can_create.outputs.can_create != 'true'
+        run: exit 2
 
   build_and_test:
     name: Build, Test
@@ -77,6 +77,13 @@ jobs:
     outputs:
       job_status: ${{ job.status }}
 
+    needs: 
+      - validate_new_version
+    
+    if: >
+      needs.validate_new_version.outputs.branch_name != 'master' &&
+      github.event_name == 'push'
+    
     steps:
 
       - name: Check out code
@@ -90,11 +97,10 @@ jobs:
       - name: Test
         run: make test
 
+
   release:
     name: Build, Test, Packages
     runs-on: ubuntu-latest
-
-    if: needs.validate_new_version.outputs.branch_name == 'master'
 
     outputs:
       job_status: ${{ job.status }}
@@ -244,6 +250,9 @@ jobs:
           rsaenc -h
 
       - name: Create a new tag
+        if: >
+          needs.validate_new_version.outputs.branch_name == 'master' &&
+          github.event_name == 'push'
         run: |
           curl --request POST --url https://api.github.com/repos/${{ github.repository }}/git/tags \
           -H 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
@@ -260,6 +269,9 @@ jobs:
 
       - name: Create a Release
         id: create_release
+        if: >
+          needs.validate_new_version.outputs.branch_name == 'master' &&
+          github.event_name == 'push'
         uses: actions/create-release@v1
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -271,6 +283,9 @@ jobs:
           prerelease: false
 
       - name: Upload a Release Asset (rsaenc)
+        if: >
+          needs.validate_new_version.outputs.branch_name == 'master' &&
+          github.event_name == 'push'
         uses: actions/upload-release-asset@v1.0.2
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -281,6 +296,9 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload a Release Asset (RPM package)
+        if: >
+          needs.validate_new_version.outputs.branch_name == 'master' &&
+          github.event_name == 'push'
         uses: actions/upload-release-asset@v1.0.2
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -291,6 +309,9 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload a Release Asset (DEB package)
+        if: >
+          needs.validate_new_version.outputs.branch_name == 'master' &&
+          github.event_name == 'push'
         uses: actions/upload-release-asset@v1.0.2
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -301,6 +322,9 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload RPM package to repository
+        if: >
+          needs.validate_new_version.outputs.branch_name == 'master' &&
+          github.event_name == 'push'
         id: upload_rpm_to_repository
         run: |
           export RSYNC_PASSWORD="${{ secrets.RSYNC_PASSWORD }}"
@@ -311,6 +335,9 @@ jobs:
             ${{ secrets.RSYNC_USERNAME }}@${{ secrets.RSYNC_HOSTNAME }}::${{ secrets.RSYNC_PATH_RPM_EL7 }}
 
       - name: Upload DEB package to repository
+        if: >
+          needs.validate_new_version.outputs.branch_name == 'master' &&
+          github.event_name == 'push'
         id: upload_deb_to_repository
         run: |
           export RSYNC_PASSWORD="${{ secrets.RSYNC_PASSWORD }}"

@@ -13,15 +13,14 @@ jobs:
     outputs:
       job_status: ${{ job.status }}
 
+    needs:
+      - build_and_test
+      - validate_new_version
 
     steps:
 
     - name: Check if can create a new version
-      needs:
-         - validate_new_version
       run: echo "Passed"
 
     - name: Check if build and test passed successfully
-      needs:
-         - build_and_test
       run: echo "Passed"

@@ -113,6 +113,11 @@ jobs:
 
     steps:
 
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
       - name: Build
         id: make_build
         run: make build
@@ -123,7 +128,6 @@ jobs:
 
       - name: Generate changelog
         id: generate_changelog
-        if: steps.tag_exists.outputs.tag_exists == 'false'
         shell: bash
         run: |
           described=$(git describe --tags || git rev-list --max-parents=0 HEAD)
@@ -251,6 +255,7 @@ jobs:
 
       - name: Create a new tag
         if: >
+          needs.validate_new_version.outputs.can_create == 'true' &&
           needs.validate_new_version.outputs.branch_name == 'master' &&
           github.event_name == 'push'
         run: |
@@ -270,6 +275,7 @@ jobs:
       - name: Create a Release
         id: create_release
         if: >
+          needs.validate_new_version.outputs.can_create == 'true' &&
           needs.validate_new_version.outputs.branch_name == 'master' &&
           github.event_name == 'push'
         uses: actions/create-release@v1
@@ -284,6 +290,7 @@ jobs:
 
       - name: Upload a Release Asset (rsaenc)
         if: >
+          needs.validate_new_version.outputs.can_create == 'true' &&
           needs.validate_new_version.outputs.branch_name == 'master' &&
           github.event_name == 'push'
         uses: actions/upload-release-asset@v1.0.2
@@ -297,6 +304,7 @@ jobs:
 
       - name: Upload a Release Asset (RPM package)
         if: >
+          needs.validate_new_version.outputs.can_create == 'true' &&
           needs.validate_new_version.outputs.branch_name == 'master' &&
           github.event_name == 'push'
         uses: actions/upload-release-asset@v1.0.2
@@ -310,6 +318,7 @@ jobs:
 
       - name: Upload a Release Asset (DEB package)
         if: >
+          needs.validate_new_version.outputs.can_create == 'true' &&
           needs.validate_new_version.outputs.branch_name == 'master' &&
           github.event_name == 'push'
         uses: actions/upload-release-asset@v1.0.2
@@ -323,6 +332,7 @@ jobs:
 
       - name: Upload RPM package to repository
         if: >
+          needs.validate_new_version.outputs.can_create == 'true' &&
           needs.validate_new_version.outputs.branch_name == 'master' &&
           github.event_name == 'push'
         id: upload_rpm_to_repository
@@ -336,6 +346,7 @@ jobs:
 
       - name: Upload DEB package to repository
         if: >
+          needs.validate_new_version.outputs.can_create == 'true' &&
           needs.validate_new_version.outputs.branch_name == 'master' &&
           github.event_name == 'push'
         id: upload_deb_to_repository

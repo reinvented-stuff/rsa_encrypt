@@ -43,7 +43,7 @@ jobs:
     - name: Lookup planned tag
       id: lookup_tag
       run: |
-        URL="https://api.github.com/repos/${{github.repository}}/git/refs/tags/${{steps.readversionfile.outputs.desiredversion}}"
+        URL="https://api.github.com/repos/${{github.repository}}/git/refs/tags/${{steps.planned_version.outputs.planned_version}}"
         OUTFILE=".tag_hash"
         curl -s -X GET -H 'authorization: Bearer ${{secrets.GITHUB_TOKEN}}' --url "${URL}" | jq .object.sha | tee "${OUTFILE}"
         echo "::set-output name=tag_hash::$(cat "${OUTFILE}")"

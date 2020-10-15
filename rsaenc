@@ -15,11 +15,12 @@ usage() {
 	cat << EOF
 RSA encryption/decryption tool
 Version: ${VERSION}
-Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
+Usage: $0 [-h] [-v] [-f] [-e|-d|-g|-E|-I|-P|-L|-D] [-r keyname] [-l num] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt           Encrypt payload
     -d|--decrypt           Decrypt payload
+    -g|--generate-pass     Generate a random password
     -E|--export-key        Export public key or public part
     -I|--import-pubkey     Import public key of a recipient
     -P|--import-privkey    Import private key for decryption
@@ -28,12 +29,13 @@ Actions:
     -R|--remove-key        Remove a key
 
 Options:
-    -i|--input-filename    Input file for a selected action
+    -i|--input-filename    Input file for the selected action
     -s|--input-string      Input payload as a string
     -a|--key-alias         Alias of/for current key
     -k|--private-key       Private key to use
     -b|--public-key        Public key to use
     -r|--recipient         Recipient's public key name
+    -l|--length            Set length for the selected action
 
 Auxiliary:
     -f|--force             Force selected action
@@ -112,6 +114,17 @@ init_rc() {
 	[[ -z "${LOCAL_PRIVATEKEY_FILENAME}" ]] && LOCAL_PRIVATEKEY_FILENAME="${LOCAL_PRIVATEKEY_STORAGE}/$( get_default_private_key )"
 	[[ -z "${LOCAL_LOGLEVEL}" ]] && LOCAL_LOGLEVEL="5"
 
+	case "$OSTYPE" in
+		linux*) 
+			BASE64_WRAP_PARAM=( -w 0 ) ;;
+		darwin*)
+			BASE64_WRAP_PARAM=( ) ;;
+	esac
+
+}
+
+generate_random_string() {
+	:
 }
 
 export_pubkey() {
@@ -174,7 +187,7 @@ encrypt_content() {
 		error "Unsupported input source type: '${input_source_type}'"
 	fi
 
-	echo "${content}" | openssl rsautl -pubin -inkey "${LOCAL_PUBKEY_STORAGE}/${recipient_pubkey}" -encrypt | base64
+	echo "${content}" | openssl rsautl -pubin -inkey "${LOCAL_PUBKEY_STORAGE}/${recipient_pubkey}" -encrypt | base64 "${BASE64_WRAP_PARAM[@]}"
 
 }
 

@@ -39,8 +39,8 @@ test:
 	./.test/60_decrypt_message.sh
 	./.test/70_delete_private_keys.sh
 	./.test/80_delete_public_keys.sh
-	./.test/9000_cleanup.sh
-	rm -v .artifacts
+# 	./.test/9000_cleanup.sh
+# 	rm -v .artifacts
 
 install:
 	install -d $(DESTDIR)/usr/share/doc/$(PROGNAME_VERSION)

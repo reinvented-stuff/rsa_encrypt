@@ -528,6 +528,12 @@ main() {
 			-b|--public-key)
 				[[ -z "${CLI_PUBLIC_KEY}" ]] && CLI_PUBLIC_KEY="${2}" || error "Argument already set: -b"; shift; shift;;
 
+			-a|--key-alias)
+				[[ -z "${CLI_KEY_ALIAS}" ]] && CLI_KEY_ALIAS="${2}" || error "Argument already set: -a"; shift; shift;;
+
+			-g|--generate-random)
+				[[ -z "${CLI_GENERATE_RANDOM}" ]] && CLI_GENERATE_RANDOM="${2}" || error "Argument already set: -g"; shift; shift;;
+
 			-e|--encrypt)
 				[[ -z "${CLI_ENCRYPT}" ]] && CLI_ENCRYPT=1 || error "Parameter already set: -e"; shift;;
 
@@ -548,12 +554,6 @@ main() {
 
 			-P|--import-privkey)
 				[[ -z "${CLI_IMPORT_PRIVKEY}" ]] && CLI_IMPORT_PRIVKEY=1 || error "Parameter already set: -P"; shift;;
-
-			-a|--key-alias)
-				[[ -z "${CLI_KEY_ALIAS}" ]] && CLI_KEY_ALIAS="${2}" || error "Argument already set: -a"; shift; shift;;
-
-			-g|--generate-random)
-				[[ -z "${CLI_GENERATE_RANDOM}" ]] && CLI_GENERATE_RANDOM="${2}" || error "Argument already set: -g"; shift; shift;;
 
 			-L|--list-keystorage)
 				[[ -z "${CLI_LIST_KEYSTORAGE}" ]] && CLI_LIST_KEYSTORAGE=1 || error "Parameter already set: -L"; shift;;
@@ -576,6 +576,16 @@ main() {
 
 	if [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
 		export PRIVATE_KEY="${LOCAL_PRIVATEKEY_STORAGE}/${CLI_PRIVATE_KEY}"
+	fi
+
+	COLLIDING_ACTIONS=(
+		"${CLI_ENCRYPT}"        "${CLI_DECRYPT}"     "${CLI_EXPORT_PUBKEY}"
+		"${CLI_REMOVE_KEY}"     "${CLI_SET_DEFAULT}" "${CLI_IMPORT_PUBKEY}"
+		"${CLI_IMPORT_PRIVKEY}"
+	)
+
+	if ! check_if_set_single "${COLLIDING_ACTIONS[@]}"; then
+		error "You can use only one cation at a time"
 	fi
 
 	if [[ "${CLI_LIST_KEYSTORAGE}" == "1" ]]; then

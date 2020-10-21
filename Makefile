@@ -32,6 +32,7 @@ clean:
 
 test:
 	./.test/10_list_keys.sh
+	./.test/15_wrong_cli_parameters.sh
 	./.test/20_generate_keypairs.sh
 	./.test/30_import_private_keys.sh
 	./.test/40_import_public_keys.sh

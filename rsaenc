@@ -15,7 +15,7 @@ usage() {
 	cat << EOF
 RSA encryption/decryption tool
 Version: ${VERSION}
-Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-g len] [-r keyname] [-l num] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
+Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-g len] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt           Encrypt payload

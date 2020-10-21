@@ -393,7 +393,7 @@ fail
 # Usage
 
 ```
-Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-g len] [-r keyname] [-l num] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
+Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-g len] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt           Encrypt payload

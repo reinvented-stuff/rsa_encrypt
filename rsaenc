@@ -15,12 +15,11 @@ usage() {
 	cat << EOF
 RSA encryption/decryption tool
 Version: ${VERSION}
-Usage: $0 [-h] [-v] [-f] [-e|-d|-g|-E|-I|-P|-L|-D] [-r keyname] [-l num] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
+Usage: $0 [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-g len] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt           Encrypt payload
     -d|--decrypt           Decrypt payload
-    -g|--generate-pass     Generate a random password
     -E|--export-key        Export public key or public part
     -I|--import-pubkey     Import public key of a recipient
     -P|--import-privkey    Import private key for decryption
@@ -35,7 +34,7 @@ Options:
     -k|--private-key       Private key to use
     -b|--public-key        Public key to use
     -r|--recipient         Recipient's public key name
-    -l|--length            Set length for the selected action
+    -g|--generate-random   Use a random string as input
 
 Auxiliary:
     -f|--force             Force selected action
@@ -123,8 +122,36 @@ init_rc() {
 
 }
 
+check_if_set_single() {
+	
+	local variables
+	local found
+
+	[[ ! -z "${@}" ]] && variables=( "${@}" ) || error "Please, set veriables to validate"
+
+	for item in "${variables[@]}"; do
+
+		if [[ ! -z "${item}" ]]; then
+
+			if [[ "${found}" == "1" ]]; then
+				return 1
+			else
+				found=1
+			fi
+
+		fi
+
+	done
+
+	return 0
+}
+
 generate_random_string() {
-	:
+
+	[[ ! -z "${1}" ]] && length="${1}" || error "Please, set the random string length"
+	[[ ! -z "${2}" ]] && use_special="${2}" || use_special=0
+
+	openssl rand -base64 "${length}" | tr -d "\n"
 }
 
 export_pubkey() {
@@ -501,6 +528,12 @@ main() {
 			-b|--public-key)
 				[[ -z "${CLI_PUBLIC_KEY}" ]] && CLI_PUBLIC_KEY="${2}" || error "Argument already set: -b"; shift; shift;;
 
+			-a|--key-alias)
+				[[ -z "${CLI_KEY_ALIAS}" ]] && CLI_KEY_ALIAS="${2}" || error "Argument already set: -a"; shift; shift;;
+
+			-g|--generate-random)
+				[[ -z "${CLI_GENERATE_RANDOM}" ]] && CLI_GENERATE_RANDOM="${2}" || error "Argument already set: -g"; shift; shift;;
+
 			-e|--encrypt)
 				[[ -z "${CLI_ENCRYPT}" ]] && CLI_ENCRYPT=1 || error "Parameter already set: -e"; shift;;
 
@@ -521,9 +554,6 @@ main() {
 
 			-P|--import-privkey)
 				[[ -z "${CLI_IMPORT_PRIVKEY}" ]] && CLI_IMPORT_PRIVKEY=1 || error "Parameter already set: -P"; shift;;
-
-			-a|--key-alias)
-				[[ -z "${CLI_KEY_ALIAS}" ]] && CLI_KEY_ALIAS="${2}" || error "Argument already set: -a"; shift; shift;;
 
 			-L|--list-keystorage)
 				[[ -z "${CLI_LIST_KEYSTORAGE}" ]] && CLI_LIST_KEYSTORAGE=1 || error "Parameter already set: -L"; shift;;
@@ -548,6 +578,16 @@ main() {
 		export PRIVATE_KEY="${LOCAL_PRIVATEKEY_STORAGE}/${CLI_PRIVATE_KEY}"
 	fi
 
+	COLLIDING_ACTIONS=(
+		"${CLI_ENCRYPT}"        "${CLI_DECRYPT}"     "${CLI_EXPORT_PUBKEY}"
+		"${CLI_REMOVE_KEY}"     "${CLI_SET_DEFAULT}" "${CLI_IMPORT_PUBKEY}"
+		"${CLI_IMPORT_PRIVKEY}"
+	)
+
+	if ! check_if_set_single "${COLLIDING_ACTIONS[@]}"; then
+		error "You can use only one cation at a time"
+	fi
+
 	if [[ "${CLI_LIST_KEYSTORAGE}" == "1" ]]; then
 		debug "Listing keystorage"
 		list_keystorage
@@ -555,7 +595,7 @@ main() {
 
 	if [[ "${CLI_EXPORT_PUBKEY}" == "1" ]]; then
 
-		if [[ ! -z "${CLI_PUBLIC_KEY}" ]] && [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
+		if ! check_if_set_single "${CLI_PUBLIC_KEY}" "${CLI_PRIVATE_KEY}"; then
 			error "You only can use one: private key or public key"
 
 		elif [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
@@ -581,7 +621,7 @@ main() {
 
 	if [[ "${CLI_IMPORT_PUBKEY}" == "1" ]]; then
 
-		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+		if ! check_if_set_single "${CLI_INPUT_FILENAME}" "${CLI_INPUT_STRING}"; then
 			error "You only can use one: input file or input string"
 
 		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
@@ -597,7 +637,7 @@ main() {
 
 	if [[ "${CLI_DECRYPT}" == "1" ]]; then
 
-		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+		if ! check_if_set_single "${CLI_INPUT_FILENAME}" "${CLI_INPUT_STRING}"; then
 			error "You only can use one: input file or input string"
 
 		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
@@ -617,7 +657,7 @@ main() {
 			error "Please, set the recipient public key"
 		fi
 
-		if [[ ! -z "${CLI_INPUT_FILENAME}" ]] && [[ ! -z "${CLI_INPUT_STRING}" ]]; then
+		if ! check_if_set_single "${CLI_INPUT_FILENAME}" "${CLI_INPUT_STRING}" "${CLI_GENERATE_RANDOM}"; then
 			error "You only can use one: input file or input string"
 
 		elif [[ ! -z "${CLI_INPUT_FILENAME}" ]]; then
@@ -626,12 +666,16 @@ main() {
 		elif [[ ! -z "${CLI_INPUT_STRING}" ]]; then
 			encrypt_content "${CLI_RECIPIENT_PUBKEY}" "${CLI_INPUT_STRING}" "string"
 
+		elif [[ ! -z "${CLI_GENERATE_RANDOM}" ]]; then
+			RANDOM_STRING=$( generate_random_string "${CLI_GENERATE_RANDOM}" )
+			echo "${RANDOM_STRING}" >&2
+			encrypt_content "${CLI_RECIPIENT_PUBKEY}" "${RANDOM_STRING}" "string"
 		fi
 	fi
 
 	if [[ "${CLI_REMOVE_KEY}" == "1" ]]; then
 
-		if [[ ! -z "${CLI_PUBLIC_KEY}" ]] && [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then
+		if ! check_if_set_single "${CLI_PUBLIC_KEY}" "${CLI_PRIVATE_KEY}"; then
 			error "You only can use one: private key or public key"
 
 		elif [[ ! -z "${CLI_PRIVATE_KEY}" ]]; then

@@ -267,6 +267,19 @@ $ rsaenc -e -s "ssh root password: VHo&EdY%thjEGq6C" -r prince_arthur_tmp.pem
 JMzmWrqqsWynxVGSEmmb48ele3u2jAzjgwNcbGZmjr/CFl2SRO4RvS10jx6JnNUsqjKqYDo20T5GEX+t/Dw0RDQFmTmP9yEuXyD6b1j70PIDM4mpTpOfPtVUoMejDHgVLxpoypCJ8DN9oxNQmnPWxotWjgZFmi33hdNqRODlVoMjWlwQixYQCcAVsnO+LI0K/4H0OxG5cO5vCMkqGnflSVmSg8vUpfI2eqffg35pL4XesgxPO/RoiZKtOB3ke0dX79A95kzSkm/RY1JG4Pch72Xb8yXpbNz/KSnzPr++ODYe+nV+ap3vg0UR2wSkXo6f3Px37LctFk2XTp4aPbq4ig==
 ```
 
+## Generate random string and encrypt it
+
+There are cases when you need to do both generate a password/token and encrypt it for handing over to someone else. You can achieve that by using `-g N` parameter.
+
+Generate a password and encrypt it using recipient's RSA Key:
+```
+$ rsaenc -e -g 25 -r prince_arthur_tmp.pem
+NEZYkRDBQOTUyDGGUTvTKWejmYsGOYIG5p
+aV4gb9LtRQc45ySCfAN11XuahB9i6laXljvn/q/CTzrRnTUcnPzBLEqUoZ3b2Kt7P3F+NYyggLwBYG/lbBzVojyOlUDSrfvm+J+4okd2zOzcAFaQMgOuJkoUP0MhDrFwOUJ9xpWva3M6X76SdaUrWJVCYmo2lsrLZa/ZjXA3U0k=
+```
+
+Random string goes first to stderr. Encrypted data goes the last to stdout.
+
 ## Decrypt a message
 
 Decrypt a plaintext message:
@@ -380,7 +393,7 @@ fail
 # Usage
 
 ```
-Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
+Usage: rsaenc [-h] [-v] [-f] [-e|-d|-E|-I|-P|-L|-D] [-g len] [-r keyname] [-k|-b keyname] [-i filename] [-s payload] [-a alias]
 
 Actions:
     -e|--encrypt           Encrypt payload
@@ -393,12 +406,13 @@ Actions:
     -R|--remove-key        Remove a key
 
 Options:
-    -i|--input-filename    Input file for a selected action
+    -i|--input-filename    Input file for the selected action
     -s|--input-string      Input payload as a string
     -a|--key-alias         Alias of/for current key
     -k|--private-key       Private key to use
     -b|--public-key        Public key to use
     -r|--recipient         Recipient's public key name
+    -g|--generate-random   Use a random string as input
 
 Auxiliary:
     -f|--force             Force selected action

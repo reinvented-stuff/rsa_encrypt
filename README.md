@@ -278,7 +278,7 @@ NEZYkRDBQOTUyDGGUTvTKWejmYsGOYIG5p
 aV4gb9LtRQc45ySCfAN11XuahB9i6laXljvn/q/CTzrRnTUcnPzBLEqUoZ3b2Kt7P3F+NYyggLwBYG/lbBzVojyOlUDSrfvm+J+4okd2zOzcAFaQMgOuJkoUP0MhDrFwOUJ9xpWva3M6X76SdaUrWJVCYmo2lsrLZa/ZjXA3U0k=
 ```
 
-Random string goes first to stderr. Encrypted data goes the last to stdout.
+Random string goes the first to stderr. Encrypted data goes the last to stdout.
 
 ## Decrypt a message
 

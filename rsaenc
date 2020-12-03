@@ -214,7 +214,7 @@ encrypt_content() {
 		error "Unsupported input source type: '${input_source_type}'"
 	fi
 
-	echo "${content}" | openssl rsautl -pubin -inkey "${LOCAL_PUBKEY_STORAGE}/${recipient_pubkey}" -encrypt | base64 "${BASE64_WRAP_PARAM[@]}"
+	echo "${content}" | openssl rsautl -pubin -inkey "${LOCAL_PUBKEY_STORAGE}/${recipient_pubkey}" -oaep -encrypt | base64 "${BASE64_WRAP_PARAM[@]}"
 
 }
 
@@ -225,7 +225,6 @@ decrypt_content() {
 	local content
 	local input_source
 	local input_source_type
-
 
 	[[ ! -z "${1}" ]] && input_source="${1}" || error "Please, set the input source with the content"
 	[[ ! -z "${2}" ]] && input_source_type="${2}" || input_source_type="string"
@@ -242,7 +241,7 @@ decrypt_content() {
 		error "Unsupported input source type: '${input_source_type}'"
 	fi
 
-	echo "${content}" | base64 --decode | openssl rsautl -decrypt -pkcs -inkey "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}"
+	echo "${content}" | base64 --decode | openssl rsautl -decrypt -oaep -inkey "${PRIVATE_KEY:-${LOCAL_PRIVATEKEY_FILENAME}}"
 
 }
 
